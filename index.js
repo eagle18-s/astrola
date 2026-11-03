@@ -7,7 +7,32 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
 app.use(express.static(__dirname));
+
+// Leaderboard JSON API
+const lbFile = path.join(__dirname, 'leaderboard.json');
+
+function getLeaderboard() {
+    if (!fs.existsSync(lbFile)) {
+        fs.writeFileSync(lbFile, JSON.stringify([]));
+    }
+    return JSON.parse(fs.readFileSync(lbFile, 'utf8'));
+}
+
+app.get('/api/leaderboard', (req, res) => {
+    res.json(getLeaderboard());
+});
+
+app.post('/api/leaderboard', (req, res) => {
+    const { name, img, score } = req.body;
+    if (!name || !score) return res.status(400).send('Məlumat əksikdir');
+    
+    let list = getLeaderboard();
+    list.push({ name, img, score });
+    fs.writeFileSync(lbFile, JSON.stringify(list, null, 2));
+    res.status(200).send('Əlavə olundu');
+});
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -27,20 +52,18 @@ const client = new Client({
     ]
 });
 
-// JSON File Helper for Auto-Role persistence
-const rolesFile = path.join(__dirname, 'roles.json');
+// Settings JSON (Oto-rol və Log kanalı üçün)
+const settingsFile = path.join(__dirname, 'settings.json');
 
-function getSavedRoles() {
-    if (!fs.existsSync(rolesFile)) {
-        fs.writeFileSync(rolesFile, JSON.stringify({}));
+function getSettings() {
+    if (!fs.existsSync(settingsFile)) {
+        fs.writeFileSync(settingsFile, JSON.stringify({}));
     }
-    return JSON.parse(fs.readFileSync(rolesFile, 'utf8'));
+    return JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
 }
 
-function saveRole(guildId, roleId) {
-    const data = getSavedRoles();
-    data[guildId] = roleId;
-    fs.writeFileSync(rolesFile, JSON.stringify(data, null, 2));
+function saveSettings(data) {
+    fs.writeFileSync(settingsFile, JSON.stringify(data, null, 2));
 }
 
 // SLASH COMMANDS DEFINITION
@@ -70,6 +93,11 @@ const commands = [
         .setName('oto-rol')
         .setDescription('Yeni gələn hər kəsə veriləcək rolu təyin edər')
         .addRoleOption(opt => opt.setName('rol').setDescription('Rol').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('log')
+        .setDescription('Botun bildirişləri atacağı log kanalını təyin edər')
+        .addChannelOption(opt => opt.setName('kanal').setDescription('Log kanalı').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
@@ -80,16 +108,42 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
+
+    // BOT RESTART OLANDA LOG KANALINA BİLDİRİDƏN GÖNDƏRMƏ VƏ XATIRLATMA
+    const settings = getSettings();
+    for (const [guildId, config] of Object.entries(settings)) {
+        if (config.logChannelId) {
+            try {
+                const guild = await client.guilds.fetch(guildId);
+                const channel = await guild.channels.fetch(config.logChannelId);
+                if (channel) {
+                    const roleName = config.autoRoleId ? `<@&${config.autoRoleId}>` : 'Təyin olunmayıb';
+                    const embed = new EmbedBuilder()
+                        .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
+                        .setDescription('Sistemlər uğurla işə düşdü. Yaddaşda saxlanılan cari tənzimləmələr aşağıdadır:')
+                        .addFields(
+                            { name: '⚙️ Aktiv Oto-Rol', value: roleName, inline: true },
+                            { name: '🛡️ Status', value: 'Hər şey nəzarət altındadır, unutmamışam! 👍', inline: true }
+                        )
+                        .setColor('#00F2FE')
+                        .setTimestamp();
+                    await channel.send({ embeds: [embed] });
+                }
+            } catch (err) {
+                console.error(`Log kanalına mesaj göndərilə bilmədi (${guildId}):`, err);
+            }
+        }
+    }
 });
 
 // OTO-ROL EVENT
 client.on('guildMemberAdd', async (member) => {
-    const saved = getSavedRoles();
-    const roleId = saved[member.guild.id];
-    if (!roleId) return;
+    const settings = getSettings();
+    const config = settings[member.guild.id];
+    if (!config || !config.autoRoleId) return;
 
     try {
-        const role = member.guild.roles.cache.get(roleId);
+        const role = member.guild.roles.cache.get(config.autoRoleId);
         if (role) await member.roles.add(role);
     } catch (err) { console.error(err); }
 });
@@ -127,11 +181,25 @@ client.on('interactionCreate', async (interaction) => {
     }
     else if (commandName === 'oto-rol') {
         const role = options.getRole('rol');
-        saveRole(guild.id, role.id);
+        let settings = getSettings();
+        if (!settings[guild.id]) settings[guild.id] = {};
+        settings[guild.id].autoRoleId = role.id;
+        saveSettings(settings);
+
         const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə **${role.name}** veriləcək.`).setColor('#10B981');
+        await interaction.reply({ embeds: [embed] });
+    }
+    else if (commandName === 'log') {
+        const channel = options.getChannel('kanal');
+        let settings = getSettings();
+        if (!settings[guild.id]) settings[guild.id] = {};
+        settings[guild.id].logChannelId = channel.id;
+        saveSettings(settings);
+
+        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot restart edəndə xəbərdarlıqlar ${channel} kanalına göndəriləcək.`).setColor('#5865F2');
         await interaction.reply({ embeds: [embed] });
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-           
+        
