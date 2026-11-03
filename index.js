@@ -98,6 +98,10 @@ const commands = [
         .setName('log')
         .setDescription('Botun bildirişləri atacağı log kanalını təyin edər')
         .addChannelOption(opt => opt.setName('kanal').setDescription('Log kanalı').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('logyoxla')
+        .setDescription('Botun yaddaşdakı oto-rol və log məlumatlarını yoxlayır')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
@@ -117,11 +121,10 @@ client.once('ready', async () => {
                 const guild = await client.guilds.fetch(guildId);
                 const channel = await guild.channels.fetch(config.logChannelId);
                 if (channel) {
-                    // Rolun adını tapmağa çalışırıq
                     let roleText = 'Təyin olunmayıb';
                     if (config.autoRoleId) {
                         const role = guild.roles.cache.get(config.autoRoleId);
-                        roleText = role ? `<@&${config.autoRoleId}>` : 'ID tapıldı, lakin rol mövcuddur';
+                        roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
                     }
 
                     const embed = new EmbedBuilder()
@@ -135,7 +138,6 @@ client.once('ready', async () => {
                         .setTimestamp();
                     
                     await channel.send({ embeds: [embed] });
-                    console.log(`[RESTART LOG]: Log kanalına (${channel.name}) xatırlatma göndərildi.`);
                 }
             } catch (err) {
                 console.error(`Log kanalına mesaj göndərilə bilmədi (${guildId}):`, err);
@@ -204,9 +206,42 @@ client.on('interactionCreate', async (interaction) => {
         settings[guild.id].logChannelId = channel.id;
         saveSettings(settings);
 
-        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot restart edəndə xatırlatmalar ${channel} kanalına göndəriləcək.`).setColor('#5865F2');
+        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot xatırlatmaları ${channel} kanalına göndərəcək.`).setColor('#5865F2');
         await interaction.reply({ embeds: [embed] });
+    }
+    else if (commandName === 'logyoxla') {
+        const settings = getSettings();
+        const config = settings[guild.id];
+
+        if (!config || !config.logChannelId) {
+            return interaction.reply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb! Əvvəlcə `/log #kanal` yazın.', ephemeral: true });
+        }
+
+        const channel = guild.channels.cache.get(config.logChannelId);
+        if (!channel) {
+            return interaction.reply({ content: '❌ Əvvəl təyin olunan log kanalı tapılmadı (silinmiş ola bilər).', ephemeral: true });
+        }
+
+        let roleText = 'Təyin olunmayıb';
+        if (config.autoRoleId) {
+            const role = guild.roles.cache.get(config.autoRoleId);
+            roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
+        }
+
+        const embed = new EmbedBuilder()
+            .setTitle('🔍 ASPROL Log Yoxlama Sorğusu')
+            .setDescription('Yaddaşda saxlanılan cari məlumatlarım tamamilə yerindədir:')
+            .addFields(
+                { name: '⚙️ Yaddaşdakı Oto-Rol', value: roleText, inline: true },
+                { name: '🛡️ Status', value: 'Unutmamışam, hər şey yadımadadır! 👍', inline: true }
+            )
+            .setColor('#10B981')
+            .setTimestamp();
+
+        await channel.send({ embeds: [embed] });
+        await interaction.reply({ content: `✅ Məlumatlar uğurla ${channel} kanalına göndərildi!`, ephemeral: true });
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
+    
