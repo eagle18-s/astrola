@@ -7,19 +7,20 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0d0f17;
-            --card-bg: rgba(23, 27, 44, 0.7);
+            --bg-color: #07080c;
+            --card-bg: rgba(18, 22, 38, 0.6);
             --primary-color: #5865F2;
             --accent-color: #00f2fe;
             --text-color: #ffffff;
-            --text-secondary: #a0a6c0;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
             transition: all 0.3s ease;
         }
 
@@ -27,75 +28,94 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             overflow-x: hidden;
-            background: radial-gradient(circle at top right, #1a1c2e, #0d0f17);
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #07080c 70%);
             min-height: 100vh;
         }
 
-        /* Navbar & Hamburger */
+        /* Navbar */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 20px 50px;
-            background: rgba(13, 15, 23, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(7, 8, 12, 0.7);
+            backdrop-filter: blur(20px);
             position: fixed;
             width: 100%;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .logo {
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
             background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .hamburger {
-            font-size: 28px;
+            font-size: 24px;
             cursor: pointer;
             color: var(--text-color);
+            background: rgba(255,255,255,0.05);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .hamburger:hover {
+            background: rgba(88, 101, 242, 0.2);
+            border-color: var(--primary-color);
         }
 
         /* Sidebar Drawer */
         .sidebar {
             position: fixed;
             top: 0;
-            right: -350px;
-            width: 350px;
+            right: -380px;
+            width: 380px;
             height: 100%;
-            background: rgba(18, 21, 36, 0.95);
-            backdrop-filter: blur(15px);
-            box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+            background: rgba(11, 14, 23, 0.95);
+            backdrop-filter: blur(25px);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.8);
             z-index: 1001;
             padding: 30px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            justify-content: space-between;
+            border-left: 1px solid var(--border-color);
         }
 
         .sidebar.active {
             right: 0;
         }
 
+        .sidebar-top {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
         .close-btn {
             align-self: flex-end;
-            font-size: 24px;
+            font-size: 20px;
             cursor: pointer;
+            color: var(--text-secondary);
         }
+        .close-btn:hover { color: white; }
 
         .lang-select {
             background: var(--card-bg);
             color: var(--text-color);
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 10px;
-            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 10px;
             outline: none;
             width: 100%;
             cursor: pointer;
@@ -110,92 +130,128 @@
             align-items: center;
             text-align: center;
             padding: 0 20px;
-            position: relative;
         }
 
         .hero h1 {
-            font-size: 3.5rem;
+            font-size: 4rem;
+            font-weight: 900;
             margin-bottom: 20px;
-            animation: fadeInDown 1s ease;
-            background: linear-gradient(90deg, #fff, var(--accent-color));
+            background: linear-gradient(135deg, #fff 30%, var(--accent-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
         }
 
         .hero p {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             color: var(--text-secondary);
-            max-width: 600px;
-            margin-bottom: 30px;
-            animation: fadeInUp 1s ease;
+            max-width: 650px;
+            margin-bottom: 35px;
+            line-height: 1.6;
         }
 
         .btn {
-            padding: 12px 30px;
-            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--primary-color), #4752c4);
             color: white;
             border: none;
-            border-radius: 30px;
-            font-weight: bold;
+            border-radius: 14px;
+            font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            box-shadow: 0 0 15px rgba(88, 101, 242, 0.4);
+            box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.5);
         }
 
         /* Sections */
         .section {
-            padding: 80px 50px;
-            max-width: 1200px;
+            padding: 60px 20px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         .card {
             background: var(--card-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 35px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         }
 
-        /* Modal / Form */
+        .card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px 16px;
             margin: 10px 0;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
             color: white;
-            border-radius: 8px;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-color);
         }
 
         .leaderboard-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-top: 10px;
         }
 
         .leaderboard-item img {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-color);
         }
 
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Bot Log Hidden Trigger Footer inside Sidebar */
+        .sidebar-footer {
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            display: flex;
+            justify-content: center;
         }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+        .secret-bot-trigger {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .secret-bot-trigger:hover {
+            color: var(--accent-color);
+            background: rgba(0, 242, 254, 0.1);
+            border-color: var(--accent-color);
         }
     </style>
 </head>
@@ -208,38 +264,45 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <div class="close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
-        <h3 id="menu-title">Ayarlar</h3>
-        
-        <label id="lang-label">Dil Seçimi:</label>
-        <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
-            <option value="az">Aprebaycan (AZ)</option>
-            <option value="en">English (EN)</option>
-            <option value="tr">Türkçe (TR)</option>
-        </select>
+        <div class="sidebar-top">
+            <div class="close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
+            <h3 id="menu-title">Ayarlar</h3>
+            
+            <label id="lang-label" style="font-size: 14px; color: var(--text-secondary);">Dil Seçimi:</label>
+            <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+                <option value="az">Azərbaycan (AZ)</option>
+                <option value="en">English (EN)</option>
+                <option value="tr">Türkçe (TR)</option>
+            </select>
 
-        <hr style="border-color: rgba(255,255,255,0.1);">
+            <hr style="border-color: var(--border-color); margin: 10px 0;">
 
-        <h3>Manual Sıralama Yüklə</h3>
-        <input type="text" id="swName" placeholder="İstifadəçi Adı">
-        <input type="text" id="swImg" placeholder="Profil Şəkli Linki (URL)">
-        <input type="number" id="swScore" placeholder="Sıra / Xal">
-        <button class="btn" style="width: 100%;" onclick="addLeaderboard()">Əlavə et</button>
+            <h4 style="font-size: 15px;">Manual Sıralama Əlavə et</h4>
+            <input type="text" id="swName" placeholder="İstifadəçi Adı">
+            <input type="text" id="swImg" placeholder="Profil Şəkli Linki (URL)">
+            <input type="number" id="swScore" placeholder="Sıra / Xal">
+            <button class="btn" style="width: 100%; justify-content: center; margin-top: 5px;" onclick="addLeaderboard()">Əlavə et</button>
+        </div>
+
+        <!-- Sidebar Footer with Secret Bot Log Trigger -->
+        <div class="sidebar-footer">
+            <button class="secret-bot-trigger" onclick="openLogPrompt()" title="Bot Log"><i class="fa-solid fa-robot"></i></button>
+        </div>
     </div>
 
     <!-- Hero Section -->
     <section class="hero">
         <h1 id="hero-title">ASPROL BOT & SUNUCU</h1>
-        <p id="hero-desc">Bütün moderasiya ehtiyaclarınız və icmanız üçün hazırlanmış ən estetik həll yolu.</p>
-        <a href="#about" class="btn" id="hero-btn">Sunucu Haqqında Məlumat</a>
+        <p id="hero-desc">İcmanız və moderasiya idarəetməniz üçün hazırlanmış ən estetik, müasir və güclü Discord bot həlli.</p>
+        <a href="#about" class="btn" id="hero-btn"><i class="fa-solid fa-compass"></i> Sunucu Haqqında</a>
     </section>
 
     <!-- Sunucu Haqqında -->
     <section class="section" id="about">
         <div class="card">
-            <h2 id="about-title">Sunucu Haqqında</h2>
-            <p id="about-text" style="margin-top: 10px; color: var(--text-secondary);">
-                Açılış tarixi, qaydalar və xüsusi fəaliyyətlərimiz yaxın zamanda bura əlavə olunacaq!
+            <h2 id="about-title"><i class="fa-solid fa-server" style="color: var(--accent-color);"></i> Sunucu Haqqında</h2>
+            <p id="about-text" style="color: var(--text-secondary); line-height: 1.7;">
+                ASPROL icmasına xoş gəlmisiniz! Burada güclü qoruma sistemləri, əyləncəli kanallar və aktiv müzakirələr sizi gözləyir. Yeniliklər və açılış tarixləri yaxın zamanda paylaşılacaq.
             </p>
         </div>
     </section>
@@ -247,28 +310,29 @@
     <!-- SW Sıralama -->
     <section class="section">
         <div class="card">
-            <h2 id="lb-title">SW Sıralama (Leaderboard)</h2>
-            <div id="leaderboard-list" style="margin-top: 15px;">
-                <!-- Dinamik daxil olunacaq -->
+            <h2 id="lb-title"><i class="fa-solid fa-trophy" style="color: #ffd700;"></i> SW Sıralama (Leaderboard)</h2>
+            <div id="leaderboard-list">
+                <!-- Dinamik əlavələr -->
             </div>
         </div>
     </section>
 
-    <!-- Bot Log Section -->
-    <section class="section">
-        <div class="card">
-            <h2>Bot Log</h2>
-            <div id="auth-box">
-                <p style="color: var(--text-secondary); margin-bottom: 10px;">Logları görmək üçün parolu daxil edin:</p>
+    <!-- Bot Log Section (Hidden by default, unlocked via sidebar robot icon) -->
+    <section class="section" id="logSection" style="display: none;">
+        <div class="card" style="border-color: var(--accent-color);">
+            <h2><i class="fa-solid fa-terminal" style="color: var(--accent-color);"></i> Bot Real-Time Log</h2>
+            <div id="auth-box" style="margin-top: 15px;">
+                <p style="color: var(--text-secondary); margin-bottom: 10px;">Loglara baxmaq üçün məxfi kodu daxil edin:</p>
                 <input type="password" id="logPass" placeholder="Məxfi Kod">
-                <button class="btn" onclick="checkLogAuth()">Daxil ol</button>
+                <button class="btn" onclick="checkLogAuth()" style="margin-top: 10px;">Təsdiqlə</button>
             </div>
             <div id="log-content" style="display: none; margin-top: 15px;">
-                <p style="color: #00ff88;"><i class="fa-solid fa-check"></i> Giriş Uğurludur!</p>
-                <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: monospace;">
-                    [SYSTEM LOG]: Bot 24/7 rejimdə işləyir.<br>
-                    [MOD LOG]: /ban əmri icra olundu.<br>
-                    [SERVER]: Bütün sistemlər aktivdir.
+                <p style="color: #00ff88; margin-bottom: 10px;"><i class="fa-solid fa-shield-halved"></i> Giriş Uğurludur! Sistemlər tam aktivdir.</p>
+                <div style="background: rgba(0,0,0,0.6); padding: 18px; border-radius: 12px; font-family: monospace; font-size: 13px; color: #38bdf8; border: 1px solid var(--border-color); line-height: 1.5;">
+                    [00:00:01] [SYSTEM]: Express server işə düşdü.<br>
+                    [00:00:02] [DISCORD]: ASPROL Bot uğurla qoşuldu.<br>
+                    [00:00:05] [MOD-LOG]: Slash komandaları sinxronlaşdırıldı.<br>
+                    [ACTIVE]: /oto-rol sistemi quraşdırıldı və aktivdir.
                 </div>
             </div>
         </div>
@@ -280,30 +344,30 @@
                 menuTitle: "Ayarlar",
                 langLabel: "Dil Seçimi:",
                 heroTitle: "ASPROL BOT & SUNUCU",
-                heroDesc: "Bütün moderasiya ehtiyaclarınız və icmanız üçün hazırlanmış ən estetik həll yolu.",
-                heroBtn: "Sunucu Haqqında Məlumat",
+                heroDesc: "İcmanız və moderasiya idarəetməniz üçün hazırlanmış ən estetik, müasir və güclü Discord bot həlli.",
+                heroBtn: "Sunucu Haqqında",
                 aboutTitle: "Sunucu Haqqında",
-                aboutText: "Açılış tarixi, qaydalar və xüsusi fəaliyyətlərimiz yaxın zamanda bura əlavə olunacaq!",
+                aboutText: "ASPROL icmasına xoş gəlmisiniz! Burada güclü qoruma sistemləri, əyləncəli kanallar və aktiv müzakirələr sizi gözləyir.",
                 lbTitle: "SW Sıralama (Leaderboard)"
             },
             en: {
                 menuTitle: "Settings",
                 langLabel: "Language:",
                 heroTitle: "ASPROL BOT & SERVER",
-                heroDesc: "The most aesthetic solution designed for all your moderation and community needs.",
+                heroDesc: "The most aesthetic, modern, and powerful Discord bot solution designed for your community.",
                 heroBtn: "About Server",
                 aboutTitle: "About Server",
-                aboutText: "Opening date, rules, and special events will be added here soon!",
+                aboutText: "Welcome to the ASPROL community! Strong security systems and active discussions await you here.",
                 lbTitle: "SW Leaderboard"
             },
             tr: {
                 menuTitle: "Ayarlar",
                 langLabel: "Dil Seçimi:",
                 heroTitle: "ASPROL BOT & SUNUCU",
-                heroDesc: "Tüm moderasyon ihtiyaçlarınız ve topluluğunuz için tasarlanmış en estetik çözüm.",
-                heroBtn: "Sunucu Hakkında Bilgi",
+                heroDesc: "Topluluğunuz ve moderasyon yönetiminiz için tasarlanmış en estetik ve güçlü Discord bot çözümü.",
+                heroBtn: "Sunucu Hakkında",
                 aboutTitle: "Sunucu Hakkında",
-                aboutText: "Açılış tarihi, kurallar ve özel etkinliklerimiz yakında buraya eklenecektir!",
+                aboutText: "ASPROL topluluğuna hoş geldiniz! Güçlü koruma sistemleri ve aktif tartışmalar burada sizi bekliyor.",
                 lbTitle: "SW Sıralaması"
             }
         };
@@ -312,15 +376,22 @@
             document.getElementById('sidebar').classList.toggle('active');
         }
 
+        function openLogPrompt() {
+            toggleSidebar();
+            const logSec = document.getElementById('logSection');
+            logSec.style.display = 'block';
+            logSec.scrollIntoView({ behavior: 'smooth' });
+        }
+
         function changeLanguage(lang) {
             document.getElementById('menu-title').innerText = translations[lang].menuTitle;
             document.getElementById('lang-label').innerText = translations[lang].langLabel;
             document.getElementById('hero-title').innerText = translations[lang].heroTitle;
             document.getElementById('hero-desc').innerText = translations[lang].heroDesc;
-            document.getElementById('hero-btn').innerText = translations[lang].heroBtn;
-            document.getElementById('about-title').innerText = translations[lang].aboutTitle;
+            document.getElementById('hero-btn').innerHTML = `<i class="fa-solid fa-compass"></i> ${translations[lang].heroBtn}`;
+            document.getElementById('about-title').innerHTML = `<i class="fa-solid fa-server" style="color: var(--accent-color);"></i> ${translations[lang].aboutTitle}`;
             document.getElementById('about-text').innerText = translations[lang].aboutText;
-            document.getElementById('lb-title').innerText = translations[lang].lbTitle;
+            document.getElementById('lb-title').innerHTML = `<i class="fa-solid fa-trophy" style="color: #ffd700;"></i> ${translations[lang].lbTitle}`;
         }
 
         function checkLogAuth() {
@@ -335,7 +406,7 @@
 
         function addLeaderboard() {
             const name = document.getElementById('swName').value;
-            const img = document.getElementById('swImg').value || 'https://via.placeholder.com/40';
+            const img = document.getElementById('swImg').value || 'https://via.placeholder.com/45';
             const score = document.getElementById('swScore').value;
 
             if(!name || !score) return alert('Ad və sıra daxil edin!');
@@ -346,9 +417,9 @@
             item.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <img src="${img}" alt="user">
-                    <span>${name}</span>
+                    <span style="font-weight: 600;">${name}</span>
                 </div>
-                <span style="font-weight: bold; color: var(--accent-color);">#${score}</span>
+                <span style="font-weight: bold; color: var(--accent-color); font-size: 1.1rem;">#${score}</span>
             `;
             container.appendChild(item);
 
