@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -109,7 +109,7 @@ client.once('ready', async () => {
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
 
-    // BOT RESTART OLANDA LOG KANALINA BİLDİRİDƏN GÖNDƏRMƏ VƏ XATIRLATMA
+    // BOT RESTART OLANDA TƏYİN OLUNMUŞ LOG KANALINA XATIRLATMA GÖNDƏRMƏSİ
     const settings = getSettings();
     for (const [guildId, config] of Object.entries(settings)) {
         if (config.logChannelId) {
@@ -117,17 +117,25 @@ client.once('ready', async () => {
                 const guild = await client.guilds.fetch(guildId);
                 const channel = await guild.channels.fetch(config.logChannelId);
                 if (channel) {
-                    const roleName = config.autoRoleId ? `<@&${config.autoRoleId}>` : 'Təyin olunmayıb';
+                    // Rolun adını tapmağa çalışırıq
+                    let roleText = 'Təyin olunmayıb';
+                    if (config.autoRoleId) {
+                        const role = guild.roles.cache.get(config.autoRoleId);
+                        roleText = role ? `<@&${config.autoRoleId}>` : 'ID tapıldı, lakin rol mövcuddur';
+                    }
+
                     const embed = new EmbedBuilder()
                         .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                        .setDescription('Sistemlər uğurla işə düşdü. Yaddaşda saxlanılan cari tənzimləmələr aşağıdadır:')
+                        .setDescription('Sistemlər uğurla işə düşdü. Yaddaşda saxlanılan cari tənzimləmələrimiz:')
                         .addFields(
-                            { name: '⚙️ Aktiv Oto-Rol', value: roleName, inline: true },
+                            { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
                             { name: '🛡️ Status', value: 'Hər şey nəzarət altındadır, unutmamışam! 👍', inline: true }
                         )
                         .setColor('#00F2FE')
                         .setTimestamp();
+                    
                     await channel.send({ embeds: [embed] });
+                    console.log(`[RESTART LOG]: Log kanalına (${channel.name}) xatırlatma göndərildi.`);
                 }
             } catch (err) {
                 console.error(`Log kanalına mesaj göndərilə bilmədi (${guildId}):`, err);
@@ -186,7 +194,7 @@ client.on('interactionCreate', async (interaction) => {
         settings[guild.id].autoRoleId = role.id;
         saveSettings(settings);
 
-        const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə **${role.name}** veriləcək.`).setColor('#10B981');
+        const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə avtomatik olaraq **${role.name}** veriləcək.`).setColor('#10B981');
         await interaction.reply({ embeds: [embed] });
     }
     else if (commandName === 'log') {
@@ -196,10 +204,9 @@ client.on('interactionCreate', async (interaction) => {
         settings[guild.id].logChannelId = channel.id;
         saveSettings(settings);
 
-        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot restart edəndə xəbərdarlıqlar ${channel} kanalına göndəriləcək.`).setColor('#5865F2');
+        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot restart edəndə xatırlatmalar ${channel} kanalına göndəriləcək.`).setColor('#5865F2');
         await interaction.reply({ embeds: [embed] });
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-        
