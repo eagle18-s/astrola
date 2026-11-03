@@ -80,7 +80,6 @@
             to { opacity: 0; visibility: hidden; }
         }
 
-        /* Navbar */
         header {
             display: flex;
             justify-content: space-between;
@@ -117,12 +116,6 @@
             border: 1px solid var(--border-color);
         }
 
-        .hamburger:hover {
-            background: rgba(88, 101, 242, 0.2);
-            border-color: var(--primary-color);
-        }
-
-        /* Sidebar Drawer */
         .sidebar {
             position: fixed;
             top: 0;
@@ -140,9 +133,7 @@
             border-left: 1px solid var(--border-color);
         }
 
-        .sidebar.active {
-            right: 0;
-        }
+        .sidebar.active { right: 0; }
 
         .sidebar-top {
             display: flex;
@@ -156,7 +147,6 @@
             cursor: pointer;
             color: var(--text-secondary);
         }
-        .close-btn:hover { color: white; }
 
         .lang-select {
             background: var(--card-bg);
@@ -169,7 +159,6 @@
             cursor: pointer;
         }
 
-        /* Hero Section */
         .hero {
             height: 100vh;
             display: flex;
@@ -187,7 +176,6 @@
             background: linear-gradient(135deg, #fff 30%, var(--accent-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
         }
 
         .hero p {
@@ -213,12 +201,6 @@
             gap: 10px;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.5);
-        }
-
-        /* Sections */
         .section {
             padding: 60px 20px;
             max-width: 1100px;
@@ -253,10 +235,6 @@
             outline: none;
         }
 
-        input:focus {
-            border-color: var(--accent-color);
-        }
-
         .leaderboard-item {
             display: flex;
             align-items: center;
@@ -276,7 +254,6 @@
             border: 2px solid var(--accent-color);
         }
 
-        /* Sidebar Footer with Secret Bot Log Trigger */
         .sidebar-footer {
             border-top: 1px solid var(--border-color);
             padding-top: 20px;
@@ -295,17 +272,10 @@
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--border-color);
         }
-
-        .secret-bot-trigger:hover {
-            color: var(--accent-color);
-            background: rgba(0, 242, 254, 0.1);
-            border-color: var(--accent-color);
-        }
     </style>
 </head>
 <body>
 
-    <!-- Pro Intro Splash Screen Animation -->
     <div id="splash-screen">
         <div class="splash-title">ASTROL NETWORK</div>
         <div class="splash-subtitle">Altay hələ düşünür...</div>
@@ -316,7 +286,6 @@
         <div class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></div>
     </header>
 
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-top">
             <div class="close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
@@ -330,59 +299,48 @@
             </select>
         </div>
 
-        <!-- Sidebar Footer with Secret Bot Log Trigger -->
         <div class="sidebar-footer">
             <button class="secret-bot-trigger" onclick="openLogPrompt()" title="Bot Log"><i class="fa-solid fa-robot"></i></button>
         </div>
     </div>
 
-    <!-- Hero Section -->
     <section class="hero">
         <h1 id="hero-title">ASPROL BOT & SUNUCU</h1>
         <p id="hero-desc">İcmanız və moderasiya idarəetməniz üçün hazırlanmış ən estetik, müasir və güclü Discord bot həlli.</p>
         <a href="#about" class="btn" id="hero-btn"><i class="fa-solid fa-compass"></i> Sunucu Haqqında</a>
     </section>
 
-    <!-- Sunucu Haqqında -->
     <section class="section" id="about">
         <div class="card">
             <h2 id="about-title"><i class="fa-solid fa-server" style="color: var(--accent-color);"></i> Sunucu Haqqında</h2>
             <p id="about-text" style="color: var(--text-secondary); line-height: 1.7;">
-                ASPROL icmasına xoş gəlmisiniz! Burada güclü qoruma sistemləri, əyləncəli kanallar və aktiv müzakirələr sizi gözləyir. Yeniliklər və açılış tarixləri yaxın zamanda paylaşılacaq.
+                ASPROL icmasına xoş gəlmisiniz! Burada güclü qoruma sistemləri, əyləncəli kanallar və aktiv müzakirələr sizi gözləyir.
             </p>
         </div>
     </section>
 
-    <!-- SW Sıralama -->
     <section class="section">
         <div class="card">
             <h2 id="lb-title"><i class="fa-solid fa-trophy" style="color: #ffd700;"></i> SW Sıralama (Leaderboard)</h2>
-            <div id="leaderboard-list">
-                <!-- Dinamik əlavələr -->
-            </div>
+            <div id="leaderboard-list"></div>
         </div>
     </section>
 
-    <!-- Bot Log & Manual Leaderboard Section (Unlocked via secret code) -->
     <section class="section" id="logSection" style="display: none;">
         <div class="card" style="border-color: var(--accent-color);">
             <h2><i class="fa-solid fa-terminal" style="color: var(--accent-color);"></i> Bot Real-Time Log & Admin Panel</h2>
             <div id="auth-box" style="margin-top: 15px;">
-                <p style="color: var(--text-secondary); margin-bottom: 10px;">Loglara və manual sıralama panelinə baxmaq üçün məxfi kodu daxil edin:</p>
+                <p style="color: var(--text-secondary); margin-bottom: 10px;">Məxfi kodu daxil edin:</p>
                 <input type="password" id="logPass" placeholder="Məxfi Kod">
                 <button class="btn" onclick="checkLogAuth()" style="margin-top: 10px;">Təsdiqlə</button>
             </div>
             
             <div id="log-content" style="display: none; margin-top: 20px;">
-                <p style="color: #00ff88; margin-bottom: 15px;"><i class="fa-solid fa-shield-halved"></i> Giriş Uğurludur! Admin paneli aktivdir.</p>
+                <p style="color: #00ff88; margin-bottom: 15px;"><i class="fa-solid fa-shield-halved"></i> Giriş Uğurludur!</p>
                 <div style="background: rgba(0,0,0,0.6); padding: 18px; border-radius: 12px; font-family: monospace; font-size: 13px; color: #38bdf8; border: 1px solid var(--border-color); line-height: 1.5; margin-bottom: 20px;">
-                    [00:00:01] [SYSTEM]: Express server işə düşdü.<br>
-                    [00:00:02] [DISCORD]: ASPROL Bot uğurla qoşuldu.<br>
-                    [00:00:05] [MOD-LOG]: Slash komandaları sinxronlaşdırıldı.<br>
-                    [ACTIVE]: /oto-rol sistemi quraşdırıldı və aktivdir.
+                    [SYSTEM]: Server aktivdir.<br>[DISCORD]: Bot işləyir.
                 </div>
 
-                <!-- Gizli Manual Sıralama Formu -->
                 <div style="border-top: 1px solid var(--border-color); padding-top: 20px;">
                     <h4 style="font-size: 16px; margin-bottom: 10px; color: #fff;"><i class="fa-solid fa-plus-circle"></i> Manual Sıralama Əlavə et</h4>
                     <input type="text" id="swName" placeholder="İstifadəçi Adı">
@@ -395,38 +353,7 @@
     </section>
 
     <script>
-        const translations = {
-            az: {
-                menuTitle: "Ayarlar",
-                langLabel: "Dil Seçimi:",
-                heroTitle: "ASPROL BOT & SUNUCU",
-                heroDesc: "İcmanız və moderasiya idarəetməniz üçün hazırlanmış ən estetik, müasir və güclü Discord bot həlli.",
-                heroBtn: "Sunucu Haqqında",
-                aboutTitle: "Sunucu Haqqında",
-                aboutText: "ASPROL icmasına xoş gəlmisiniz! Burada güclü qoruma sistemləri, əyləncəli kanallar və aktiv müzakirələr sizi gözləyir.",
-                lbTitle: "SW Sıralama (Leaderboard)"
-            },
-            en: {
-                menuTitle: "Settings",
-                langLabel: "Language:",
-                heroTitle: "ASPROL BOT & SERVER",
-                heroDesc: "The most aesthetic, modern, and powerful Discord bot solution designed for your community.",
-                heroBtn: "About Server",
-                aboutTitle: "About Server",
-                aboutText: "Welcome to the ASPROL community! Strong security systems and active discussions await you here.",
-                lbTitle: "SW Leaderboard"
-            },
-            tr: {
-                menuTitle: "Ayarlar",
-                langLabel: "Dil Seçimi:",
-                heroTitle: "ASPROL BOT & SUNUCU",
-                heroDesc: "Topluluğunuz ve moderasyon yönetiminiz için tasarlanmış en estetik ve güçlü Discord bot çözümü.",
-                heroBtn: "Sunucu Hakkında",
-                aboutTitle: "Sunucu Hakkında",
-                aboutText: "ASPROL topluluğuna hoş geldiniz! Güçlü koruma sistemleri ve aktif tartışmalar burada sizi bekliyor.",
-                lbTitle: "SW Sıralaması"
-            }
-        };
+        document.addEventListener("DOMContentLoaded", loadLeaderboard);
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
@@ -439,24 +366,11 @@
             logSec.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function changeLanguage(lang) {
-            document.getElementById('menu-title').innerText = translations[lang].menuTitle;
-            document.getElementById('hero-title').innerText = translations[lang].heroTitle;
-            document.getElementById('hero-desc').innerText = translations[lang].heroDesc;
-            document.getElementById('hero-btn').innerHTML = `<i class="fa-solid fa-compass"></i> ${translations[lang].heroBtn}`;
-            document.getElementById('about-title').innerHTML = `<i class="fa-solid fa-server" style="color: var(--accent-color);"></i> ${translations[lang].aboutTitle}`;
-            document.getElementById('about-text').innerText = translations[lang].aboutText;
-            document.getElementById('lb-title').innerHTML = `<i class="fa-solid fa-trophy" style="color: #ffd700;"></i> ${translations[lang].lbTitle}`;
-        }
-
         function checkLogAuth() {
-            const code = document.getElementById('logPass').value;
-            if(code === 'altaydevvpervissz') {
+            if(document.getElementById('logPass').value === 'altaydevvpervissz') {
                 document.getElementById('auth-box').style.display = 'none';
                 document.getElementById('log-content').style.display = 'block';
-            } else {
-                alert('Xətalı kod!');
-            }
+            } else { alert('Xətalı kod!'); }
         }
 
         function addLeaderboard() {
@@ -466,21 +380,34 @@
 
             if(!name || !score) return alert('Ad və sıra daxil edin!');
 
-            const container = document.getElementById('leaderboard-list');
-            const item = document.createElement('div');
-            item.className = 'leaderboard-item';
-            item.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <img src="${img}" alt="user">
-                    <span style="font-weight: 600;">${name}</span>
-                </div>
-                <span style="font-weight: bold; color: var(--accent-color); font-size: 1.1rem;">#${score}</span>
-            `;
-            container.appendChild(item);
+            let list = JSON.parse(localStorage.getItem('sw_lb') || '[]');
+            list.push({ name, img, score });
+            localStorage.setItem('sw_lb', JSON.stringify(list));
 
+            loadLeaderboard();
             document.getElementById('swName').value = '';
             document.getElementById('swImg').value = '';
             document.getElementById('swScore').value = '';
+            alert('Uğurla əlavə olundu!');
+        }
+
+        function loadLeaderboard() {
+            const container = document.getElementById('leaderboard-list');
+            container.innerHTML = '';
+            let list = JSON.parse(localStorage.getItem('sw_lb') || '[]');
+            
+            list.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item';
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img src="${item.img}" alt="user">
+                        <span style="font-weight: 600;">${item.name}</span>
+                    </div>
+                    <span style="font-weight: bold; color: var(--accent-color); font-size: 1.1rem;">#${item.score}</span>
+                `;
+                container.appendChild(div);
+            });
         }
     </script>
 </body>
