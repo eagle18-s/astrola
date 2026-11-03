@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASPROL BOT & Community</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0f17;
+            --card-bg: rgba(23, 27, 44, 0.7);
+            --primary-color: #5865F2;
+            --accent-color: #00f2fe;
+            --text-color: #ffffff;
+            --text-secondary: #a0a6c0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            background: radial-gradient(circle at top right, #1a1c2e, #0d0f17);
+            min-height: 100vh;
+        }
+
+        /* Navbar & Hamburger */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(13, 15, 23, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hamburger {
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        /* Sidebar Drawer */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100%;
+            background: rgba(18, 21, 36, 0.95);
+            backdrop-filter: blur(15px);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+            z-index: 1001;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .close-btn {
+            align-self: flex-end;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .lang-select {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            outline: none;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            animation: fadeInDown 1s ease;
+            background: linear-gradient(90deg, #fff, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 30px;
+            animation: fadeInUp 1s ease;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.4);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+        }
+
+        /* Sections */
+        .section {
+            padding: 80px 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Modal / Form */
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .leaderboard-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo"><i class="fa-solid fa-robot"></i> ASPROL BOT</div>
+        <div class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></div>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
+        <h3 id="menu-title">Ayarlar</h3>
+        
+        <label id="lang-label">Dil Seçimi:</label>
+        <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+            <option value="az">Aprebaycan (AZ)</option>
+            <option value="en">English (EN)</option>
+            <option value="tr">Türkçe (TR)</option>
+        </select>
+
+        <hr style="border-color: rgba(255,255,255,0.1);">
+
+        <h3>Manual Sıralama Yüklə</h3>
+        <input type="text" id="swName" placeholder="İstifadəçi Adı">
+        <input type="text" id="swImg" placeholder="Profil Şəkli Linki (URL)">
+        <input type="number" id="swScore" placeholder="Sıra / Xal">
+        <button class="btn" style="width: 100%;" onclick="addLeaderboard()">Əlavə et</button>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1 id="hero-title">ASPROL BOT & SUNUCU</h1>
+        <p id="hero-desc">Bütün moderasiya ehtiyaclarınız və icmanız üçün hazırlanmış ən estetik həll yolu.</p>
+        <a href="#about" class="btn" id="hero-btn">Sunucu Haqqında Məlumat</a>
+    </section>
+
+    <!-- Sunucu Haqqında -->
+    <section class="section" id="about">
+        <div class="card">
+            <h2 id="about-title">Sunucu Haqqında</h2>
+            <p id="about-text" style="margin-top: 10px; color: var(--text-secondary);">
+                Açılış tarixi, qaydalar və xüsusi fəaliyyətlərimiz yaxın zamanda bura əlavə olunacaq!
+            </p>
+        </div>
+    </section>
+
+    <!-- SW Sıralama -->
+    <section class="section">
+        <div class="card">
+            <h2 id="lb-title">SW Sıralama (Leaderboard)</h2>
+            <div id="leaderboard-list" style="margin-top: 15px;">
+                <!-- Dinamik daxil olunacaq -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Bot Log Section -->
+    <section class="section">
+        <div class="card">
+            <h2>Bot Log</h2>
+            <div id="auth-box">
+                <p style="color: var(--text-secondary); margin-bottom: 10px;">Logları görmək üçün parolu daxil edin:</p>
+                <input type="password" id="logPass" placeholder="Məxfi Kod">
+                <button class="btn" onclick="checkLogAuth()">Daxil ol</button>
+            </div>
+            <div id="log-content" style="display: none; margin-top: 15px;">
+                <p style="color: #00ff88;"><i class="fa-solid fa-check"></i> Giriş Uğurludur!</p>
+                <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: monospace;">
+                    [SYSTEM LOG]: Bot 24/7 rejimdə işləyir.<br>
+                    [MOD LOG]: /ban əmri icra olundu.<br>
+                    [SERVER]: Bütün sistemlər aktivdir.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const translations = {
+            az: {
+                menuTitle: "Ayarlar",
+                langLabel: "Dil Seçimi:",
+                heroTitle: "ASPROL BOT & SUNUCU",
+                heroDesc: "Bütün moderasiya ehtiyaclarınız və icmanız üçün hazırlanmış ən estetik həll yolu.",
+                heroBtn: "Sunucu Haqqında Məlumat",
+                aboutTitle: "Sunucu Haqqında",
+                aboutText: "Açılış tarixi, qaydalar və xüsusi fəaliyyətlərimiz yaxın zamanda bura əlavə olunacaq!",
+                lbTitle: "SW Sıralama (Leaderboard)"
+            },
+            en: {
+                menuTitle: "Settings",
+                langLabel: "Language:",
+                heroTitle: "ASPROL BOT & SERVER",
+                heroDesc: "The most aesthetic solution designed for all your moderation and community needs.",
+                heroBtn: "About Server",
+                aboutTitle: "About Server",
+                aboutText: "Opening date, rules, and special events will be added here soon!",
+                lbTitle: "SW Leaderboard"
+            },
+            tr: {
+                menuTitle: "Ayarlar",
+                langLabel: "Dil Seçimi:",
+                heroTitle: "ASPROL BOT & SUNUCU",
+                heroDesc: "Tüm moderasyon ihtiyaçlarınız ve topluluğunuz için tasarlanmış en estetik çözüm.",
+                heroBtn: "Sunucu Hakkında Bilgi",
+                aboutTitle: "Sunucu Hakkında",
+                aboutText: "Açılış tarihi, kurallar ve özel etkinliklerimiz yakında buraya eklenecektir!",
+                lbTitle: "SW Sıralaması"
+            }
+        };
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function changeLanguage(lang) {
+            document.getElementById('menu-title').innerText = translations[lang].menuTitle;
+            document.getElementById('lang-label').innerText = translations[lang].langLabel;
+            document.getElementById('hero-title').innerText = translations[lang].heroTitle;
+            document.getElementById('hero-desc').innerText = translations[lang].heroDesc;
+            document.getElementById('hero-btn').innerText = translations[lang].heroBtn;
+            document.getElementById('about-title').innerText = translations[lang].aboutTitle;
+            document.getElementById('about-text').innerText = translations[lang].aboutText;
+            document.getElementById('lb-title').innerText = translations[lang].lbTitle;
+        }
+
+        function checkLogAuth() {
+            const code = document.getElementById('logPass').value;
+            if(code === 'altaydevvpervissz') {
+                document.getElementById('auth-box').style.display = 'none';
+                document.getElementById('log-content').style.display = 'block';
+            } else {
+                alert('Xətalı kod!');
+            }
+        }
+
+        function addLeaderboard() {
+            const name = document.getElementById('swName').value;
+            const img = document.getElementById('swImg').value || 'https://via.placeholder.com/40';
+            const score = document.getElementById('swScore').value;
+
+            if(!name || !score) return alert('Ad və sıra daxil edin!');
+
+            const container = document.getElementById('leaderboard-list');
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="${img}" alt="user">
+                    <span>${name}</span>
+                </div>
+                <span style="font-weight: bold; color: var(--accent-color);">#${score}</span>
+            `;
+            container.appendChild(item);
+
+            document.getElementById('swName').value = '';
+            document.getElementById('swImg').value = '';
+            document.getElementById('swScore').value = '';
+        }
+    </script>
+</body>
+</html>
