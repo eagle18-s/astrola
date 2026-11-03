@@ -32,6 +32,54 @@
             min-height: 100vh;
         }
 
+        /* --- PRO INTRO SPLASH ANIMATION --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #05070a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeOutSplash 0.8s ease 2.5s forwards;
+        }
+
+        .splash-title {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #fff 20%, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideInUp 1s ease 0.2s forwards;
+            text-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
+        }
+
+        .splash-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-top: 15px;
+            letter-spacing: 1px;
+            opacity: 0;
+            animation: fadeInOnly 1s ease 1s forwards;
+        }
+
+        @keyframes slideInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInOnly {
+            to { opacity: 1; }
+        }
+        @keyframes fadeOutSplash {
+            to { opacity: 0; visibility: hidden; }
+        }
+
         /* Navbar */
         header {
             display: flex;
@@ -228,7 +276,7 @@
             border: 2px solid var(--accent-color);
         }
 
-        /* Bot Log Hidden Trigger Footer inside Sidebar */
+        /* Sidebar Footer with Secret Bot Log Trigger */
         .sidebar-footer {
             border-top: 1px solid var(--border-color);
             padding-top: 20px;
@@ -257,6 +305,12 @@
 </head>
 <body>
 
+    <!-- Pro Intro Splash Screen Animation -->
+    <div id="splash-screen">
+        <div class="splash-title">ASTROL NETWORK</div>
+        <div class="splash-subtitle">Altay hələ düşünür...</div>
+    </div>
+
     <header>
         <div class="logo"><i class="fa-solid fa-robot"></i> ASPROL BOT</div>
         <div class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></div>
@@ -274,14 +328,6 @@
                 <option value="en">English (EN)</option>
                 <option value="tr">Türkçe (TR)</option>
             </select>
-
-            <hr style="border-color: var(--border-color); margin: 10px 0;">
-
-            <h4 style="font-size: 15px;">Manual Sıralama Əlavə et</h4>
-            <input type="text" id="swName" placeholder="İstifadəçi Adı">
-            <input type="text" id="swImg" placeholder="Profil Şəkli Linki (URL)">
-            <input type="number" id="swScore" placeholder="Sıra / Xal">
-            <button class="btn" style="width: 100%; justify-content: center; margin-top: 5px;" onclick="addLeaderboard()">Əlavə et</button>
         </div>
 
         <!-- Sidebar Footer with Secret Bot Log Trigger -->
@@ -317,22 +363,32 @@
         </div>
     </section>
 
-    <!-- Bot Log Section (Hidden by default, unlocked via sidebar robot icon) -->
+    <!-- Bot Log & Manual Leaderboard Section (Unlocked via secret code) -->
     <section class="section" id="logSection" style="display: none;">
         <div class="card" style="border-color: var(--accent-color);">
-            <h2><i class="fa-solid fa-terminal" style="color: var(--accent-color);"></i> Bot Real-Time Log</h2>
+            <h2><i class="fa-solid fa-terminal" style="color: var(--accent-color);"></i> Bot Real-Time Log & Admin Panel</h2>
             <div id="auth-box" style="margin-top: 15px;">
-                <p style="color: var(--text-secondary); margin-bottom: 10px;">Loglara baxmaq üçün məxfi kodu daxil edin:</p>
+                <p style="color: var(--text-secondary); margin-bottom: 10px;">Loglara və manual sıralama panelinə baxmaq üçün məxfi kodu daxil edin:</p>
                 <input type="password" id="logPass" placeholder="Məxfi Kod">
                 <button class="btn" onclick="checkLogAuth()" style="margin-top: 10px;">Təsdiqlə</button>
             </div>
-            <div id="log-content" style="display: none; margin-top: 15px;">
-                <p style="color: #00ff88; margin-bottom: 10px;"><i class="fa-solid fa-shield-halved"></i> Giriş Uğurludur! Sistemlər tam aktivdir.</p>
-                <div style="background: rgba(0,0,0,0.6); padding: 18px; border-radius: 12px; font-family: monospace; font-size: 13px; color: #38bdf8; border: 1px solid var(--border-color); line-height: 1.5;">
+            
+            <div id="log-content" style="display: none; margin-top: 20px;">
+                <p style="color: #00ff88; margin-bottom: 15px;"><i class="fa-solid fa-shield-halved"></i> Giriş Uğurludur! Admin paneli aktivdir.</p>
+                <div style="background: rgba(0,0,0,0.6); padding: 18px; border-radius: 12px; font-family: monospace; font-size: 13px; color: #38bdf8; border: 1px solid var(--border-color); line-height: 1.5; margin-bottom: 20px;">
                     [00:00:01] [SYSTEM]: Express server işə düşdü.<br>
                     [00:00:02] [DISCORD]: ASPROL Bot uğurla qoşuldu.<br>
                     [00:00:05] [MOD-LOG]: Slash komandaları sinxronlaşdırıldı.<br>
                     [ACTIVE]: /oto-rol sistemi quraşdırıldı və aktivdir.
+                </div>
+
+                <!-- Gizli Manual Sıralama Formu -->
+                <div style="border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <h4 style="font-size: 16px; margin-bottom: 10px; color: #fff;"><i class="fa-solid fa-plus-circle"></i> Manual Sıralama Əlavə et</h4>
+                    <input type="text" id="swName" placeholder="İstifadəçi Adı">
+                    <input type="text" id="swImg" placeholder="Profil Şəkli Linki (URL)">
+                    <input type="number" id="swScore" placeholder="Sıra / Xal">
+                    <button class="btn" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="addLeaderboard()">Sıralamaya Əlavə Et</button>
                 </div>
             </div>
         </div>
@@ -385,7 +441,6 @@
 
         function changeLanguage(lang) {
             document.getElementById('menu-title').innerText = translations[lang].menuTitle;
-            document.getElementById('lang-label').innerText = translations[lang].langLabel;
             document.getElementById('hero-title').innerText = translations[lang].heroTitle;
             document.getElementById('hero-desc').innerText = translations[lang].heroDesc;
             document.getElementById('hero-btn').innerHTML = `<i class="fa-solid fa-compass"></i> ${translations[lang].heroBtn}`;
