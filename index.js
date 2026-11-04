@@ -89,6 +89,11 @@ const commands = [
         .setDescription('Sürətli səsvermə embedi yaradar')
         .addStringOption(opt => opt.setName('movzu').setDescription('Səsvermə mövzusu').setRequired(true)),
     new SlashCommandBuilder()
+        .setName('anket')
+        .setDescription('Bəli / Xeyr düyməli anket paneli göndərər')
+        .addStringOption(opt => opt.setName('movzu').setDescription('Anket mövzusu').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
         .setName('dəstək')
         .setDescription('Dəstək (Ticket) panelini göndərər')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -106,7 +111,7 @@ client.once('ready', async () => {
     }
 });
 
-// Avtomatik Rol və Loglama Sistemi Bərpa Olundu
+// Avtomatik Rol və Loglama Sistemi
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
@@ -197,7 +202,13 @@ client.on('interactionCreate', async (interaction) => {
         }, 5000);
     }
 
-    // 3. EMBED MODAL
+    // 3. ANKET SƏSLƏMƏ DÜYMƏLƏRİ (Bəli / Xeyr)
+    if (interaction.isButton() && (interaction.customId === 'anket_yes' || interaction.customId === 'anket_no')) {
+        const choice = interaction.customId === 'anket_yes' ? 'Bəli' : 'Xeyr';
+        await interaction.reply({ content: `✅ Sizin səsiniz qeydə alındı: **${choice}**`, ephemeral: true });
+    }
+
+    // 4. EMBED MODAL
     if (interaction.isButton() && interaction.customId === 'open_embed_modal') {
         const modal = new ModalBuilder()
             .setCustomId('embed_creator_modal')
@@ -299,6 +310,29 @@ client.on('interactionCreate', async (interaction) => {
             await pollMessage.react('👍');
             await pollMessage.react('👎');
         }
+        else if (commandName === 'anket') {
+            const topic = options.getString('movzu');
+            const embed = new EmbedBuilder()
+                .setTitle('📋 Yeni Anket')
+                .setDescription(topic)
+                .setColor('#9B59B6')
+                .setFooter({ text: `Anketi başladı: ${interaction.user.username}` })
+                .setTimestamp();
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('anket_yes')
+                    .setLabel('👍 Bəli')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('anket_no')
+                    .setLabel('👎 Xeyr')
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+            await interaction.reply({ content: '✅ Anket uğurla yaradıldı!', ephemeral: true });
+            await interaction.channel.send({ embeds: [embed], components: [row] });
+        }
         else if (commandName === 'moderasiya') {
             await interaction.reply({ 
                 embeds: [new EmbedBuilder().setTitle('🛡️ ASPROL Pro Moderasiya Paneli').setDescription('Menudan əməliyyat seçin.').setColor('#5865F2')],
@@ -379,4 +413,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-        
+            
