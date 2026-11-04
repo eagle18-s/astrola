@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`[SERVER]: Veb Sayt ${PORT} portunda aktivdir.`);
+    console.log(`[SERVER]: Web Sunucusu ${PORT} portunda aktif.`);
 });
 
 // 2. DISCORD BOT
@@ -55,63 +55,79 @@ function getSettings() {
 }
 
 const commands = [
-    new SlashCommandBuilder().setName('moderasiya').setDescription('Estetik Moderasiya Panelini Açar'),
+    new SlashCommandBuilder().setName('moderasyon').setDescription('Estetik Moderasyon Panelini Açar'),
     new SlashCommandBuilder()
-        .setName('clear')
-        .setDescription('Çatdakı mesajları silər')
-        .addIntegerOption(opt => opt.setName('say').setDescription('Silinəcək mesaj sayı').setRequired(true)),
+        .setName('sil')
+        .setDescription('Sohbetteki mesajları siler')
+        .addIntegerOption(opt => opt.setName('sayi').setDescription('Silinecek mesaj sayısı').setRequired(true)),
     new SlashCommandBuilder()
-        .setName('ban')
-        .setDescription('İstifadəçini sunucudan ban edər')
-        .addUserOption(opt => opt.setName('istifadeci').setDescription('İstifadəçi').setRequired(true))
-        .addStringOption(opt => opt.setName('sebeb').setDescription('Səbəb'))
+        .setName('yasakla')
+        .setDescription('Kullanıcıyı sunucudan yasaklar')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Kullanıcı').setRequired(true))
+        .addStringOption(opt => opt.setName('sebep').setDescription('Sebep'))
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
     new SlashCommandBuilder()
-        .setName('kick')
-        .setDescription('İstifadəçini sunucudan atar')
-        .addUserOption(opt => opt.setName('istifadeci').setDescription('İstifadəçi').setRequired(true))
-        .addStringOption(opt => opt.setName('sebeb').setDescription('Səbəb'))
+        .setName('at')
+        .setDescription('Kullanıcıyı sunucudan atar')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Kullanıcı').setRequired(true))
+        .addStringOption(opt => opt.setName('sebep').setDescription('Sebep'))
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
     new SlashCommandBuilder()
         .setName('avatar')
-        .setDescription('İstifadəçinin profil şəklini göstərər')
-        .addUserOption(opt => opt.setName('istifadeci').setDescription('İstifadəçi')),
+        .setDescription('Kullanıcının profil fotoğrafını gösterir')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Kullanıcı')),
     new SlashCommandBuilder()
-        .setName('logyoxla')
-        .setDescription('Botun yaddaşdakı tənzimləmələrini yoxlayır')
+        .setName('logkontrol')
+        .setDescription('Botun bellekteki ayarlarını kontrol eder')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
         .setName('embed')
-        .setDescription('Admin şifrəsi ilə xüsusi embed yaradıcı paneli açar')
+        .setDescription('Admin şifresiyle özel embed oluşturucu paneli açar')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
-        .setName('sorğu')
-        .setDescription('Sürətli səsvermə embedi yaradar')
-        .addStringOption(opt => opt.setName('movzu').setDescription('Səsvermə mövzusu').setRequired(true)),
+        .setName('sorgu')
+        .setDescription('Hızlı oylama embedi oluşturur')
+        .addStringOption(opt => opt.setName('konu').setDescription('Oylama konusu').setRequired(true)),
     new SlashCommandBuilder()
         .setName('anket')
-        .setDescription('Bəli / Xeyr düyməli anket paneli göndərər')
-        .addStringOption(opt => opt.setName('movzu').setDescription('Anket mövzusu').setRequired(true))
+        .setDescription('Evet / Hayır butonlu anket paneli gönderir')
+        .addStringOption(opt => opt.setName('konu').setDescription('Anket konusu').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
-        .setName('dəstək')
-        .setDescription('Dəstək (Ticket) panelini göndərər')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setName('destek')
+        .setDescription('Destek (Ticket) panelini gönderir')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('yazitura')
+        .setDescription('Yazı Tura atar'),
+    new SlashCommandBuilder()
+        .setName('zar')
+        .setDescription('1 ile 6 arasında rastgele zar atar'),
+    new SlashCommandBuilder()
+        .setName('sunucubilgi')
+        .setDescription('Sunucu hakkında detaylı bilgi gösterir'),
+    new SlashCommandBuilder()
+        .setName('kullanicibilgi')
+        .setDescription('Kullanıcı hakkında detaylı bilgi gösterir')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Kullanıcı')),
+    new SlashCommandBuilder()
+        .setName('yardim')
+        .setDescription('Botun tüm komutlarını listeler')
 ].map(cmd => cmd.toJSON());
 
 client.once('ready', async () => {
-    console.log(`[BOT]: ${client.user.tag} adı ilə giriş edildi!`);
+    console.log(`[BOT]: ${client.user.tag} olarak giriş yapıldı!`);
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
-        console.log('[BOT]: Yeni komandalar qlobal olaraq qeydiyyatdan keçirilir...');
+        console.log('[BOT]: Komutlar global olarak güncelleniyor...');
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('[BOT]: Slash komandaları uğurla yeniləndi!');
+        console.log('[BOT]: Slash komutları başarıyla güncellendi!');
     } catch (error) { 
-        console.error('Komanda yükləmə xətası:', error); 
+        console.error('Komut yükleme hatası:', error); 
     }
 });
 
-// Avtomatik Rol və Loglama Sistemi
+// Otomatik Rol ve Loglama Sistemi
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
@@ -124,29 +140,29 @@ client.on('guildMemberAdd', async (member) => {
             if (role) await member.roles.add(role);
         }
 
-        // Log Kanalına Bildiriş
+        // Log Kanalına Bildirim
         if (config.logChannelId) {
             const logChannel = member.guild.channels.cache.get(config.logChannelId);
             if (logChannel) {
                 const logEmbed = new EmbedBuilder()
-                    .setTitle('📥 Yeni İstifadəçi Qoşuldu')
-                    .setDescription(`**${member.user.tag}** serverə daxil oldu!`)
+                    .setTitle('📥 Yeni Kullanıcı Katıldı')
+                    .setDescription(`**${member.user.tag}** sunucuya giriş yaptı!`)
                     .setColor('#10B981')
                     .setTimestamp();
                 await logChannel.send({ embeds: [logEmbed] });
             }
         }
-    } catch (err) { console.error('Oto-rol və ya log xətası:', err); }
+    } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
 
 client.on('interactionCreate', async (interaction) => {
-    // 1. TICKET YARATMA DÜYMƏSİ
+    // 1. TICKET OLUŞTURMA BUTONU
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
-        const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
 
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
         if (existingChannel) {
-            return interaction.reply({ content: `❌ Sizin artıq açıq bir dəstək kanalınız var: ${existingChannel}`, ephemeral: true });
+            return interaction.reply({ content: `❌ Zaten açık olan bir destek kanalınız var: ${existingChannel}`, ephemeral: true });
         }
 
         try {
@@ -170,49 +186,49 @@ client.on('interactionCreate', async (interaction) => {
             });
 
             const embed = new EmbedBuilder()
-                .setTitle('📩 ASPROL Dəstək Mərkəzi')
-                .setDescription(`Xoş gəldiniz <@${interaction.user.id}>!\nZəhmət olmasa probleminizi və ya sualınızı ətraflı yazın. Adminlərimiz tezliklə cavab verəcək.`)
+                .setTitle('📩 ASPROL Destek Merkezi')
+                .setDescription(`Hoş geldiniz <@${interaction.user.id}>!\nLütfen sorununuzu veya talebinizi detaylı bir şekilde yazın. Yetkililerimiz en kısa sürede ilgilenecektir.`)
                 .setColor('#00F2FE')
                 .setTimestamp();
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('close_ticket')
-                    .setLabel('🔒 Ticket-i Bağla')
+                    .setLabel('🔒 Talebi Kapat')
                     .setStyle(ButtonStyle.Danger)
             );
 
             await ticketChannel.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [row] });
-            await interaction.reply({ content: `✅ Dəstək kanalınız yaradıldı: ${ticketChannel}`, ephemeral: true });
+            await interaction.reply({ content: `✅ Destek kanalınız oluşturuldu: ${ticketChannel}`, ephemeral: true });
         } catch (err) {
             console.error(err);
-            await interaction.reply({ content: '❌ Ticket kanalı yaradılarkən xəta baş verdi!', ephemeral: true });
+            await interaction.reply({ content: '❌ Destek kanalı oluşturulurken bir hata oluştu!', ephemeral: true });
         }
     }
 
-    // 2. TICKET BAĞLAMA DÜYMƏSİ
+    // 2. TICKET KAPATMA BUTONU
     if (interaction.isButton() && interaction.customId === 'close_ticket') {
-        await interaction.reply('🔒 Bu dəstək kanalı 5 saniyə sonra silinəcək...');
+        await interaction.reply('🔒 Bu destek kanalı 5 saniye sonra silinecek...');
         setTimeout(async () => {
             try {
                 await interaction.channel.delete();
             } catch (err) {
-                console.error('Kanal silinmə xətası:', err);
+                console.error('Kanal silme hatası:', err);
             }
         }, 5000);
     }
 
-    // 3. ANKET SƏSLƏMƏ DÜYMƏLƏRİ (Bəli / Xeyr)
+    // 3. ANKET OY BUTONLARI (Evet / Hayır)
     if (interaction.isButton() && (interaction.customId === 'anket_yes' || interaction.customId === 'anket_no')) {
-        const choice = interaction.customId === 'anket_yes' ? 'Bəli' : 'Xeyr';
-        await interaction.reply({ content: `✅ Sizin səsiniz qeydə alındı: **${choice}**`, ephemeral: true });
+        const choice = interaction.customId === 'anket_yes' ? 'Evet' : 'Hayır';
+        await interaction.reply({ content: `✅ Oyunuz başarıyla kaydedildi: **${choice}**`, ephemeral: true });
     }
 
     // 4. EMBED MODAL
     if (interaction.isButton() && interaction.customId === 'open_embed_modal') {
         const modal = new ModalBuilder()
             .setCustomId('embed_creator_modal')
-            .setTitle('Estetik Embed Hazırlayıcı');
+            .setTitle('Estetik Embed Oluşturucu');
 
         const titleInput = new TextInputBuilder()
             .setCustomId('embed_title')
@@ -222,13 +238,13 @@ client.on('interactionCreate', async (interaction) => {
 
         const descInput = new TextInputBuilder()
             .setCustomId('embed_desc')
-            .setLabel('Embed Mətni (Description)')
+            .setLabel('Embed Metni (Description)')
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true);
 
         const serverIdInput = new TextInputBuilder()
             .setCustomId('server_id')
-            .setLabel('Server ID')
+            .setLabel('Sunucu ID')
             .setStyle(TextInputStyle.Short)
             .setRequired(true);
 
@@ -258,10 +274,10 @@ client.on('interactionCreate', async (interaction) => {
 
         try {
             const guild = await client.guilds.fetch(serverId);
-            if (!guild) return interaction.editReply({ content: '❌ Bot bu Server ID-sini tapa bilmədi!' });
+            if (!guild) return interaction.editReply({ content: '❌ Bot bu Sunucu ID-sini bulamadı!' });
 
             const channel = await guild.channels.fetch(channelId);
-            if (!channel) return interaction.editReply({ content: '❌ Bu Serverdə belə bir Kanal ID tapılmadı!' });
+            if (!channel) return interaction.editReply({ content: '❌ Bu Sunucuda böyle bir Kanal ID bulunamadı!' });
 
             const embed = new EmbedBuilder()
                 .setTitle(title)
@@ -270,10 +286,10 @@ client.on('interactionCreate', async (interaction) => {
                 .setTimestamp();
 
             await channel.send({ embeds: [embed] });
-            await interaction.editReply({ content: `✅ Embed uğurla <#${channelId}> kanalına göndərildi!` });
+            await interaction.editReply({ content: `✅ Embed başarıyla <#${channelId}> kanalına gönderildi!` });
         } catch (err) {
             console.error(err);
-            await interaction.editReply({ content: '❌ Xəta baş verdi! ID-lərin düzgün olduğundan əmin olun.' });
+            await interaction.editReply({ content: '❌ Bir hata oluştu! ID-lerin doğru olduğundan emin olun.' });
         }
     }
 
@@ -281,66 +297,66 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName, options, guild } = interaction;
 
     try {
-        if (commandName === 'dəstək') {
+        if (commandName === 'destek') {
             const embed = new EmbedBuilder()
-                .setTitle('🎫 ASPROL Dəstək Sistemi')
-                .setDescription('Komandamızla əlaqə saxlamaq üçün aşağıdakı düyməyə basaraq özünüzə özəl **Dəstək (Ticket)** açın.')
+                .setTitle('🎫 ASPROL Destek Sistemi')
+                .setDescription('Ekibimizle iletişim kurmak için aşağıdaki düğmeye basarak kendinize özel bir **Destek (Ticket)** açın.')
                 .setColor('#5865F2');
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('create_ticket')
-                    .setLabel('📩 Ticket Aç')
+                    .setLabel('📩 Destek Talebi Aç')
                     .setStyle(ButtonStyle.Success)
             );
 
             await interaction.reply({ embeds: [embed], components: [row] });
         }
-        else if (commandName === 'sorğu') {
-            const topic = options.getString('movzu');
+        else if (commandName === 'sorgu') {
+            const topic = options.getString('konu');
             const embed = new EmbedBuilder()
-                .setTitle('📊 Yeni Səsvermə')
+                .setTitle('📊 Yeni Oylama')
                 .setDescription(topic)
                 .setColor('#F1C40F')
-                .setFooter({ text: `Səsverməni başladı: ${interaction.user.username}` })
+                .setFooter({ text: `Oylamayı başlatan: ${interaction.user.username}` })
                 .setTimestamp();
 
-            await interaction.reply({ content: '✅ Səsvermə başladıldı!', ephemeral: true });
+            await interaction.reply({ content: '✅ Oylama başlatıldı!', ephemeral: true });
             const pollMessage = await interaction.channel.send({ embeds: [embed] });
             await pollMessage.react('👍');
             await pollMessage.react('👎');
         }
         else if (commandName === 'anket') {
-            const topic = options.getString('movzu');
+            const topic = options.getString('konu');
             const embed = new EmbedBuilder()
                 .setTitle('📋 Yeni Anket')
                 .setDescription(topic)
                 .setColor('#9B59B6')
-                .setFooter({ text: `Anketi başladı: ${interaction.user.username}` })
+                .setFooter({ text: `Anketi başlatan: ${interaction.user.username}` })
                 .setTimestamp();
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('anket_yes')
-                    .setLabel('👍 Bəli')
+                    .setLabel('👍 Evet')
                     .setStyle(ButtonStyle.Success),
                 new ButtonBuilder()
                     .setCustomId('anket_no')
-                    .setLabel('👎 Xeyr')
+                    .setLabel('👎 Hayır')
                     .setStyle(ButtonStyle.Danger)
             );
 
-            await interaction.reply({ content: '✅ Anket uğurla yaradıldı!', ephemeral: true });
+            await interaction.reply({ content: '✅ Anket başarıyla oluşturuldu!', ephemeral: true });
             await interaction.channel.send({ embeds: [embed], components: [row] });
         }
-        else if (commandName === 'moderasiya') {
+        else if (commandName === 'moderasyon') {
             await interaction.reply({ 
-                embeds: [new EmbedBuilder().setTitle('🛡️ ASPROL Pro Moderasiya Paneli').setDescription('Menudan əməliyyat seçin.').setColor('#5865F2')],
+                embeds: [new EmbedBuilder().setTitle('🛡️ ASPROL Pro Moderasyon Paneli').setDescription('Menüden bir işlem seçin.').setColor('#5865F2')],
                 ephemeral: true 
             });
         }
         else if (commandName === 'embed') {
-            await interaction.reply({ content: '🔐 Zəhmət olmasa çata botun gizli kodunu yazın (30 saniyəniz var):', ephemeral: true });
+            await interaction.reply({ content: '🔐 Lütfen sohbete botun gizli şifresini yazın (30 saniyeniz var):', ephemeral: true });
 
             const filter = m => m.author.id === interaction.user.id;
             const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
@@ -355,62 +371,87 @@ client.on('interactionCreate', async (interaction) => {
                             .setLabel('✨ Embed Hazırla')
                             .setStyle(ButtonStyle.Primary)
                     );
-                    await interaction.followUp({ content: '✅ Kod doğrudur! Aşağıdakı düyməyə basaraq panel açın:', components: [row], ephemeral: true });
+                    await interaction.followUp({ content: '✅ Şifre doğru! Aşağıdaki düğmeye basarak paneli açın:', components: [row], ephemeral: true });
                 } else {
-                    await interaction.followUp({ content: '❌ Yanlış kod!', ephemeral: true });
+                    await interaction.followUp({ content: '❌ Yanlış şifre!', ephemeral: true });
                 }
             });
         }
-        else if (commandName === 'clear') {
+        else if (commandName === 'sil') {
             await interaction.deferReply({ ephemeral: true });
-            const amount = options.getInteger('say');
+            const amount = options.getInteger('sayi');
             await interaction.channel.bulkDelete(amount, true);
-            await interaction.editReply({ content: `Uğurla ${amount} mesaj silindi.` });
+            await interaction.editReply({ content: `Başarıyla ${amount} mesaj silindi.` });
         }
-        else if (commandName === 'ban') {
+        else if (commandName === 'yasakla') {
             await interaction.deferReply({ ephemeral: true });
-            const user = options.getUser('istifadeci');
+            const user = options.getUser('kullanici');
             await guild.members.ban(user);
-            await interaction.editReply(`🔨 ${user.tag} ban olundu.`);
+            await interaction.editReply(`🔨 ${user.tag} sunucudan yasaklandı.`);
         }
-        else if (commandName === 'kick') {
+        else if (commandName === 'at') {
             await interaction.deferReply({ ephemeral: true });
-            const user = options.getUser('istifadeci');
+            const user = options.getUser('kullanici');
             await guild.members.kick(user);
-            await interaction.editReply(`👢 ${user.tag} atıldı.`);
+            await interaction.editReply(`👢 ${user.tag} sunucudan atıldı.`);
         }
         else if (commandName === 'avatar') {
-            const user = options.getUser('istifadeci') || interaction.user;
+            const user = options.getUser('kullanici') || interaction.user;
             const embed = new EmbedBuilder().setTitle(`🖼️ ${user.username}`).setImage(user.displayAvatarURL({ size: 1024 }));
             await interaction.reply({ embeds: [embed], ephemeral: true });
         }
-        else if (commandName === 'logyoxla') {
+        else if (commandName === 'logkontrol') {
             await interaction.deferReply({ ephemeral: true });
             const settings = getSettings();
             const config = settings[guild.id] || Object.values(settings)[0];
 
             if (!config || !config.logChannelId) {
-                return interaction.editReply({ content: '❌ `id.json` faylında heç bir log kanalı tapılmadı!' });
+                return interaction.editReply({ content: '❌ `id.json` dosyasında herhangi bir log kanalı bulunamadı!' });
             }
 
             const embed = new EmbedBuilder()
-                .setTitle('🔍 ASPROL JSON Yoxlama Sorğusu')
-                .setDescription('id.json faylından oxunan tənzimləmələr uğurla işləyir! 👍')
+                .setTitle('🔍 ASPROL JSON Kontrol Sorgusu')
+                .setDescription('id.json dosyasından okunan ayarlar başarıyla çalışıyor! 👍')
                 .setColor('#10B981')
                 .setTimestamp();
 
             const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
             if (channel) {
                 await channel.send({ embeds: [embed] });
-                await interaction.editReply({ content: `✅ Log kanala göndərildi!` });
+                await interaction.editReply({ content: `✅ Log kanala gönderildi!` });
             } else {
-                await interaction.editReply({ content: `⚠️ Log kanalı tapılmadı!` });
+                await interaction.editReply({ content: `⚠️ Log kanalı bulunamadı!` });
             }
         }
-    } catch (err) {
-        console.error('Komanda xətası:', err);
-    }
-});
-
-client.login(process.env.DISCORD_TOKEN);
-            
+        else if (commandName === 'yazitura') {
+            const sonuc = Math.random() < 0.5 ? '🪙 Yazı' : '🪙 Tura';
+            await interaction.reply({ content: `Yazı-Tura sonucu: **${sonuc}**` });
+        }
+        else if (commandName === 'zar') {
+            const zarSayisi = Math.floor(Math.random() * 6) + 1;
+            await interaction.reply({ content: `🎲 Attığın zar: **${zarSayisi}**` });
+        }
+        else if (commandName === 'sunucubilgi') {
+            const embed = new EmbedBuilder()
+                .setTitle(`📊 ${guild.name} Sunucu Bilgileri`)
+                .addFields(
+                    { name: '👑 Sunucu Sahibi', value: `<@${guild.ownerId}>`, inline: true },
+                    { name: '👥 Üye Sayısı', value: `${guild.memberCount}`, inline: true },
+                    { name: '📅 Kuruluş Tarihi', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:R>`, inline: false }
+                )
+                .setColor('#3498DB')
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed] });
+        }
+        else if (commandName === 'kullanicibilgi') {
+            const user = options.getUser('kullanici') || interaction.user;
+            const member = await guild.members.fetch(user.id);
+            const embed = new EmbedBuilder()
+                .setTitle(`👤 ${user.tag} Bilgileri`)
+                .setThumbnail(user.displayAvatarURL({ size: 1024 }))
+                .addFields(
+                    { name: '🆔 ID', value: `${user.id}`, inline: true },
+                    { name: '📅 Sunucuya Katılım', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true },
+                    { name: '📅 Hesap Kuruluş', value: `<t:${Math.floor(user.createdTimestamp / 1000)}:R>`, inline: false }
+                )
+                .setColor('#E67E
