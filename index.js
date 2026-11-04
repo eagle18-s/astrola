@@ -2,12 +2,8 @@ const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, SlashCommandBuild
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const Groq = require('groq-sdk');
 
-// 1. GROQ CLIENT INITIALIZATION
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
-
-// 2. EXPRESS WEB SERVER
+// 1. EXPRESS WEB SERVER
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -22,7 +18,7 @@ app.listen(PORT, () => {
     console.log(`[SERVER]: Veb Sayt ${PORT} portunda aktivdir.`);
 });
 
-// 3. DISCORD BOT
+// 2. DISCORD BOT
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -131,50 +127,55 @@ client.on('guildMemberAdd', async (member) => {
     } catch (err) { console.error('Oto-rol xətası:', err); }
 });
 
-// BOTU ETİKəTLƏYƏndə SÖHBƏT ETDİKDE VƏ YA ƏMRLƏRİ İCRA EDƏNDƏ
+// GROQ AI FETCH FUNKSİYASI (HEÇ BİR PAKET TƏLƏB ETMƏZ)
+async function askGroq(promptText) {
+    if (!process.env.GROQ_API_KEY) return null;
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama3-8b-8192',
+                messages: [
+                    { role: 'system', content: 'Sən ASPROL adlı mehriban və ağıllı Discord köməkçisisən. Qısa və azərbaycanca cavablar ver.' },
+                    { role: 'user', content: promptText }
+                ],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content?.trim() || null;
+    } catch (err) {
+        console.error('Groq Fetch Xətası:', err);
+        return null;
+    }
+}
+
+// BOTU ETİKəTLƏYƏndə SÖHBƏT ETMƏK
 client.on('messageCreate', async (message) => {
-    if (message.author.bot || !message.guild || !groq) return;
+    if (message.author.bot || !message.guild) return;
 
     const isMentioned = message.mentions.has(client.user.id);
     if (!isMentioned) return;
 
-    // Etiketləndikdən sonra yazılan mətni təmizləyirik (botun ID-sini silirik)
     const cleanContent = message.content.replace(new RegExp(`<@!?${client.user.id}>`, 'g'), '').trim();
     if (!cleanContent) return;
 
-    // Əvvəlcə yoxlayaq görək bu moderasiya əmridir ya sadə sual/söhbət
-    const lowerContent = cleanContent.toLowerCase();
-
     try {
-        // Əgər ban və ya kick əmridirsə, əvvəlki kimi icra edək
-        if (lowerContent.includes('ban') && message.mentions.members.size > 1) {
-            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
-                return message.reply('❌ Bu əmri yerinə yetirmək üçün **İstifadəçiləri Ban Et** icazəniz yoxdur!');
-            }
-            const targetMember = message.mentions.members.filter(m => m.id !== client.user.id).first();
-            if (targetMember) {
-                await targetMember.ban({ reason: 'AI Təbii Moderasiya' });
-                return message.reply(`🔨 **${targetMember.user.tag}** uğurla ban olundu!`);
-            }
-        }
-
-        // Əks halda botu etiketləyib sual verdikdə Groq AI vasitəsilə cavab alırıq
-        const chatCompletion = await groq.chat.completions.create({
-            messages: [
-                { role: 'system', content: 'Sən ASPROL adlı köməkçi və mehriban Discord botusan. Qısa, dəqiq və azərbaycanca cavablar ver.' },
-                { role: 'user', content: cleanContent }
-            ],
-            model: 'llama3-8b-8192',
-            temperature: 0.7
-        });
-
-        const replyText = chatCompletion.choices[0]?.message?.content?.trim();
-        if (replyText) {
-            await message.reply(replyText);
+        // AI vasitəsilə cavab alırıq
+        const aiReply = await askGroq(cleanContent);
+        if (aiReply) {
+            await message.reply(aiReply);
+        } else {
+            await message.reply('❌ Süni intellekt cavab verə bilmədi.');
         }
     } catch (err) {
-        console.error('Groq AI Söhbət Xətası:', err);
-        await message.reply('❌ Süni intellektə qoşularkən xəta baş verdi.');
+        console.error('Mesaj xətası:', err);
+        await message.reply('❌ Xəta baş verdi.');
     }
 });
 
@@ -297,6 +298,7 @@ client.on('interactionCreate', async (interaction) => {
             await guild.members.kick(user);
             await interaction.editReply(`👢 ${user.tag} atıldı.`);
         }
+        else if (commandName:: === 'avatar') {} // safe fallback
         else if (commandName === 'avatar') {
             const user = options.getUser('istifadeci') || interaction.user;
             const embed = new EmbedBuilder().setTitle(`🖼️ ${user.username}`).setImage(user.displayAvatarURL({ size: 1024 }));
@@ -347,3 +349,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
