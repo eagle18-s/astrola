@@ -28,7 +28,7 @@ const client = new Client({
     ]
 });
 
-// GitHub-dakı sabit settings.json faylından oxumaq üçün funksiya
+// settings.json faylından oxumaq üçün funksiya
 function getSettings() {
     const settingsPath = path.join(__dirname, 'settings.json');
     if (!fs.existsSync(settingsPath)) return {};
@@ -40,7 +40,7 @@ function getSettings() {
     }
 }
 
-// SLASH COMMANDS DEFINITION
+// SLASH COMMANDS DEFINITION (Log və oto-rol əmrləri silindi, hər şey json-a inteqrasiya olundu)
 const commands = [
     new SlashCommandBuilder().setName('moderasiya').setDescription('Estetik Moderasiya Panelini Açar'),
     new SlashCommandBuilder()
@@ -65,7 +65,7 @@ const commands = [
         .addUserOption(opt => opt.setName('istifadeci').setDescription('İstifadəçi')),
     new SlashCommandBuilder()
         .setName('logyoxla')
-        .setDescription('Botun GitHub yaddaşındakı tənzimləmələri yoxlayır')
+        .setDescription('Botun yaddaşdakı tənzimləmələrini yoxlayır')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
@@ -77,7 +77,7 @@ client.once('ready', async () => {
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
 
-    // BOT RESTART OLANDA GITHUB-DAKI JSON-DAN OXUYUB KANALA XƏBƏRDARLIQ ATMASI
+    // BOT RESTART OLANDA SETTINGS.JSON-DAN OXUYUB LOG KANALINA XATIRLATMA GÖNDəRMƏSİ
     setTimeout(async () => {
         try {
             const settings = getSettings();
@@ -95,10 +95,10 @@ client.once('ready', async () => {
 
                             const embed = new EmbedBuilder()
                                 .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                                .setDescription('GitHub tənzimləmə faylından məlumatlarım oxundu:')
+                                .setDescription('Sabit JSON faylından tənzimləmələrim uğurla yükləndi:')
                                 .addFields(
-                                    { name: '⚙️ Oto-Rol', value: roleText, inline: true },
-                                    { name: '🛡️ Status', value: 'GitHub-dan oxudum, heç vaxt silinməz! 👍', inline: true }
+                                    { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
+                                    { name: '🛡️ Status', value: 'Sabit fayldan oxudum, heç vaxt silinməz! 👍', inline: true }
                                 )
                                 .setColor('#00F2FE')
                                 .setTimestamp();
@@ -111,10 +111,10 @@ client.once('ready', async () => {
                 }
             }
         } catch (e) { console.error('Restart log xətası:', e); }
-    }, 3000);
+    }, 4000);
 });
 
-// OTO-ROL EVENT
+// OTO-ROL EVENT (Yeni gələnlərə avtomatik rol vermə)
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
@@ -177,11 +177,11 @@ client.on('interactionCreate', async (interaction) => {
             }
 
             const embed = new EmbedBuilder()
-                .setTitle('🔍 ASPROL GitHub JSON Yoxlaması')
-                .setDescription('GitHub faylından oxunan cari məlumatlarım:')
+                .setTitle('🔍 ASPROL JSON Yoxlama Sorğusu')
+                .setDescription('Sabit fayldan oxunan cari məlumatlarım:')
                 .addFields(
-                    { name: '⚙️ Sabit Oto-Rol', value: roleText, inline: true },
-                    { name: '🛡️ Status', value: 'GitHub-dadır, həmişə qalacaq! 👍', inline: true }
+                    { name: '⚙️ Fayldakı Oto-Rol', value: roleText, inline: true },
+                    { name: '🛡️ Status', value: 'Həmişə yerindədir! 👍', inline: true }
                 )
                 .setColor('#10B981')
                 .setTimestamp();
@@ -189,7 +189,7 @@ client.on('interactionCreate', async (interaction) => {
             const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
             if (channel) {
                 await channel.send({ embeds: [embed] });
-                await interaction.editReply({ content: `✅ Məlumatlar GitHub faylından oxunub ${channel} kanalına göndərildi!` });
+                await interaction.editReply({ content: `✅ Məlumatlar fayldan oxunub ${channel} kanalına göndərildi!` });
             } else {
                 await interaction.editReply({ content: `⚠️ Məlumatlar fayldadır, lakin təyin olunan log kanalı tapılmadı!` });
             }
@@ -205,4 +205,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                        
+                            
