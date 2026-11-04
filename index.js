@@ -106,15 +106,32 @@ client.once('ready', async () => {
     }
 });
 
+// Avtomatik Rol və Loglama Sistemi Bərpa Olundu
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
         const config = settings[member.guild.id] || Object.values(settings)[0];
-        if (!config || !config.autoRoleId) return;
+        if (!config) return;
 
-        const role = member.guild.roles.cache.get(config.autoRoleId);
-        if (role) await member.roles.add(role);
-    } catch (err) { console.error('Oto-rol xətası:', err); }
+        // Oto-rol
+        if (config.autoRoleId) {
+            const role = member.guild.roles.cache.get(config.autoRoleId);
+            if (role) await member.roles.add(role);
+        }
+
+        // Log Kanalına Bildiriş
+        if (config.logChannelId) {
+            const logChannel = member.guild.channels.cache.get(config.logChannelId);
+            if (logChannel) {
+                const logEmbed = new EmbedBuilder()
+                    .setTitle('📥 Yeni İstifadəçi Qoşuldu')
+                    .setDescription(`**${member.user.tag}** serverə daxil oldu!`)
+                    .setColor('#10B981')
+                    .setTimestamp();
+                await logChannel.send({ embeds: [logEmbed] });
+            }
+        }
+    } catch (err) { console.error('Oto-rol və ya log xətası:', err); }
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -362,4 +379,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                                                     
+        
