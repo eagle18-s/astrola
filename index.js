@@ -127,7 +127,7 @@ client.on('guildMemberAdd', async (member) => {
     } catch (err) { console.error('Oto-rol xətası:', err); }
 });
 
-// GROQ AI FETCH FUNKSİYASI (HEÇ BİR PAKET TƏLƏB ETMƏZ)
+// GROQ AI FETCH FUNKSİYASI
 async function askGroq(promptText) {
     if (!process.env.GROQ_API_KEY) return null;
     try {
@@ -166,7 +166,6 @@ client.on('messageCreate', async (message) => {
     if (!cleanContent) return;
 
     try {
-        // AI vasitəsilə cavab alırıq
         const aiReply = await askGroq(cleanContent);
         if (aiReply) {
             await message.reply(aiReply);
@@ -298,7 +297,6 @@ client.on('interactionCreate', async (interaction) => {
             await guild.members.kick(user);
             await interaction.editReply(`👢 ${user.tag} atıldı.`);
         }
-        else if (commandName:: === 'avatar') {} // safe fallback
         else if (commandName === 'avatar') {
             const user = options.getUser('istifadeci') || interaction.user;
             const embed = new EmbedBuilder().setTitle(`🖼️ ${user.username}`).setImage(user.displayAvatarURL({ size: 1024 }));
