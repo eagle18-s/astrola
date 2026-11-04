@@ -122,7 +122,7 @@ client.once('ready', async () => {
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
 
-    // BOT RESTART OLANDA MONGODB-DƏN OXUYUB LOG KANALINA XATIRLATMA GÖNDəRMƏSİ
+    // BOT RESTART OLANDA LOG KANALINA XATIRLATMA
     setTimeout(async () => {
         try {
             const allSettings = await Setting.find({});
@@ -140,7 +140,7 @@ client.once('ready', async () => {
 
                             const embed = new EmbedBuilder()
                                 .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                                .setDescription('MongoDB bulud bazasından tənzimləmələrim uğurla yükləndi:')
+                                .setDescription('Bulud bazasından tənzimləmələrim uğurla yükləndi:')
                                 .addFields(
                                     { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
                                     { name: '🛡️ Status', value: 'Unutmamışam, bazadan oxudum! 👍', inline: true }
@@ -156,7 +156,7 @@ client.once('ready', async () => {
                 }
             }
         } catch (e) { console.error('Restart log xətası:', e); }
-    }, 4000);
+    }, 5000);
 });
 
 // OTO-ROL EVENT
@@ -202,7 +202,7 @@ client.on('interactionCreate', async (interaction) => {
         else if (commandName === 'avatar') {
             const user = options.getUser('istifadeci') || interaction.user;
             const embed = new EmbedBuilder().setTitle(`🖼️ ${user.username}`).setImage(user.displayAvatarURL({ size: 1024 }));
-            await interaction.reply({ embeds: [embed] });
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         }
         else if (commandName === 'oto-rol') {
             await interaction.deferReply({ ephemeral: true });
@@ -233,12 +233,12 @@ client.on('interactionCreate', async (interaction) => {
             const config = await Setting.findOne({ guildId: guild.id });
 
             if (!config || !config.logChannelId) {
-                return interaction.editReply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb!' });
+                return interaction.editReply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb! Əvvəlcə `/log #kanal` yazın.' });
             }
 
             const channel = guild.channels.cache.get(config.logChannelId);
             if (!channel) {
-                return interaction.editReply({ content: '❌ Log kanalı tapılmadı.' });
+                return interaction.editReply({ content: '❌ Təyin olunan log kanalı tapılmadı.' });
             }
 
             let roleText = 'Təyin olunmayıb';
@@ -271,4 +271,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                 
+    
