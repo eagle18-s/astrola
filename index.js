@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const MONGO_URI = process.env.MONGO_URI;
 
 if (MONGO_URI) {
-    mongoose.connect(MONGO_URI).then(() => {
+    mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 }).then(() => {
         console.log('[DATABASE]: MongoDB bulud bazasına uğurla qoşuldu!');
     }).catch(err => {
         console.error('[DATABASE ERROR]: Qoşulma xətası:', err);
@@ -38,6 +38,7 @@ app.use(express.static(__dirname));
 
 app.get('/api/leaderboard', async (req, res) => {
     try {
+        if (mongoose.connection.readyState !== 1) return res.json([]);
         const list = await Leaderboard.find({});
         res.json(list);
     } catch (e) {
@@ -47,6 +48,7 @@ app.get('/api/leaderboard', async (req, res) => {
 
 app.post('/api/leaderboard', async (req, res) => {
     try {
+        if (mongoose.connection.readyState !== 1) return res.status(500).send('Baza hələ hazır değil');
         const { name, img, score } = req.body;
         if (!name || !score) return res.status(400).send('Məlumat əksikdir');
         
@@ -126,6 +128,7 @@ client.once('ready', async () => {
 // OTO-ROL EVENT
 client.on('guildMemberAdd', async (member) => {
     try {
+        if (mongoose.connection.readyState !== 1) return;
         const config = await Setting.findOne({ guildId: member.guild.id });
         if (!config || !config.autoRoleId) return;
 
@@ -170,6 +173,10 @@ client.on('interactionCreate', async (interaction) => {
         }
         else if (commandName === 'oto-rol') {
             await interaction.deferReply({ ephemeral: true });
+            if (mongoose.connection.readyState !== 1) {
+                return interaction.editReply({ content: '⚠️ Verilənlər bazası hələ oyanır, zəhmət olmasa 5-10 saniyə sonra yenidən cəhd edin.' });
+            }
+
             const role = options.getRole('rol');
             await Setting.findOneAndUpdate(
                 { guildId: guild.id },
@@ -182,6 +189,10 @@ client.on('interactionCreate', async (interaction) => {
         }
         else if (commandName === 'log') {
             await interaction.deferReply({ ephemeral: true });
+            if (mongoose.connection.readyState !== 1) {
+                return interaction.editReply({ content: '⚠️ Verilənlər bazası hələ oyanır, zəhmət olmasa 5-10 saniyə sonra yenidən cəhd edin.' });
+            }
+
             const channel = options.getChannel('kanal');
             await Setting.findOneAndUpdate(
                 { guildId: guild.id },
@@ -194,6 +205,9 @@ client.on('interactionCreate', async (interaction) => {
         }
         else if (commandName === 'logyoxla') {
             await interaction.deferReply({ ephemeral: true });
+            if (mongoose.connection.readyState !== 1) {
+                return interaction.editReply({ content: '⚠️ Verilənlər bazası hələ oyanır, zəhmət olmasa 5-10 saniyə sonra yenidən cəhd edin.' });
+            }
             
             const config = await Setting.findOne({ guildId: guild.id });
             if (!config || !config.logChannelId) {
@@ -227,12 +241,12 @@ client.on('interactionCreate', async (interaction) => {
     } catch (err) {
         console.error('Komanda xətası:', err);
         if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ content: `❌ Xəta baş verdi: ${err.message}` }).catch(() => {});
+            await interaction.editReply({ content: `❌ Xəta baş verdi: Baza ilə əlaqə gecikdi.` }).catch(() => {});
         } else {
-            await interaction.reply({ content: `❌ Xəta baş verdi: ${err.message}`, ephemeral: true }).catch(() => {});
+            await interaction.reply({ content: `❌ Xəta baş verdi: Baza ilə əlaqə gecikdi.`, ephemeral: true }).catch(() => {});
         }
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-            
+                       
