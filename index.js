@@ -84,8 +84,9 @@ client.once('ready', async () => {
             for (const [guildId, config] of Object.entries(settings)) {
                 if (config.logChannelId) {
                     try {
-                        const guild = await client.guilds.fetch(guildId);
-                        const channel = await guild.channels.fetch(config.logChannelId);
+                        const guild = await client.guilds.fetch(guildId).catch(() => null);
+                        if (!guild) continue;
+                        const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
                         if (channel) {
                             let roleText = 'Təyin olunmayıb';
                             if (config.autoRoleId) {
@@ -118,7 +119,7 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
-        const config = settings[member.guild.id];
+        const config = settings[member.guild.id] || Object.values(settings)[0];
         if (!config || !config.autoRoleId) return;
 
         const role = member.guild.roles.cache.get(config.autoRoleId);
@@ -164,10 +165,11 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.deferReply({ ephemeral: true });
             
             const settings = getSettings();
-            const config = settings[guild.id];
+            // Əgər guild.id tapılmasa, birbaşa id.json-dakı ilk konfiqurasiyanı götürür
+            const config = settings[guild.id] || Object.values(settings)[0];
 
             if (!config || !config.logChannelId) {
-                return interaction.editReply({ content: '❌ `id.json` faylında bu server üçün log kanalı tapılmadı!' });
+                return interaction.editReply({ content: '❌ `id.json` faylında heç bir log kanalı tapılmadı!' });
             }
 
             let roleText = 'Təyin olunmayıb';
@@ -205,4 +207,3 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                         
