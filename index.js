@@ -2,8 +2,12 @@ const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, SlashCommandBuild
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const Groq = require('groq-sdk');
 
-// 1. EXPRESS WEB SERVER
+// 1. GROQ CLIENT INITIALIZATION
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
+
+// 2. EXPRESS WEB SERVER
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,7 +22,7 @@ app.listen(PORT, () => {
     console.log(`[SERVER]: Veb Sayt ${PORT} portunda aktivdir.`);
 });
 
-// 2. DISCORD BOT
+// 3. DISCORD BOT
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -28,7 +32,6 @@ const client = new Client({
     ]
 });
 
-// id.json faylından oxumaq üçün funksiya
 function getSettings() {
     const settingsPath = path.join(__dirname, 'id.json');
     if (!fs.existsSync(settingsPath)) return {};
@@ -40,7 +43,6 @@ function getSettings() {
     }
 }
 
-// SLASH COMMANDS DEFINITION
 const commands = [
     new SlashCommandBuilder().setName('moderasiya').setDescription('Estetik Moderasiya Panelini Açar'),
     new SlashCommandBuilder()
@@ -81,7 +83,6 @@ client.once('ready', async () => {
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
 
-    // BOT RESTART OLANDA ID.JSON-DAN OXUYUB LOG KANALINA XATIRLATMA GÖNDƏRMƏSİ
     setTimeout(async () => {
         try {
             const settings = getSettings();
@@ -119,7 +120,6 @@ client.once('ready', async () => {
     }, 4000);
 });
 
-// OTO-ROL EVENT
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
@@ -131,8 +131,54 @@ client.on('guildMemberAdd', async (member) => {
     } catch (err) { console.error('Oto-rol xətası:', err); }
 });
 
+// BOTU ETİKəTLƏYƏndə SÖHBƏT ETDİKDE VƏ YA ƏMRLƏRİ İCRA EDƏNDƏ
+client.on('messageCreate', async (message) => {
+    if (message.author.bot || !message.guild || !groq) return;
+
+    const isMentioned = message.mentions.has(client.user.id);
+    if (!isMentioned) return;
+
+    // Etiketləndikdən sonra yazılan mətni təmizləyirik (botun ID-sini silirik)
+    const cleanContent = message.content.replace(new RegExp(`<@!?${client.user.id}>`, 'g'), '').trim();
+    if (!cleanContent) return;
+
+    // Əvvəlcə yoxlayaq görək bu moderasiya əmridir ya sadə sual/söhbət
+    const lowerContent = cleanContent.toLowerCase();
+
+    try {
+        // Əgər ban və ya kick əmridirsə, əvvəlki kimi icra edək
+        if (lowerContent.includes('ban') && message.mentions.members.size > 1) {
+            if (!message.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+                return message.reply('❌ Bu əmri yerinə yetirmək üçün **İstifadəçiləri Ban Et** icazəniz yoxdur!');
+            }
+            const targetMember = message.mentions.members.filter(m => m.id !== client.user.id).first();
+            if (targetMember) {
+                await targetMember.ban({ reason: 'AI Təbii Moderasiya' });
+                return message.reply(`🔨 **${targetMember.user.tag}** uğurla ban olundu!`);
+            }
+        }
+
+        // Əks halda botu etiketləyib sual verdikdə Groq AI vasitəsilə cavab alırıq
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                { role: 'system', content: 'Sən ASPROL adlı köməkçi və mehriban Discord botusan. Qısa, dəqiq və azərbaycanca cavablar ver.' },
+                { role: 'user', content: cleanContent }
+            ],
+            model: 'llama3-8b-8192',
+            temperature: 0.7
+        });
+
+        const replyText = chatCompletion.choices[0]?.message?.content?.trim();
+        if (replyText) {
+            await message.reply(replyText);
+        }
+    } catch (err) {
+        console.error('Groq AI Söhbət Xətası:', err);
+        await message.reply('❌ Süni intellektə qoşularkən xəta baş verdi.');
+    }
+});
+
 client.on('interactionCreate', async (interaction) => {
-    // 1. DÜYMƏYƏ BASILANDA MODAL (MENYU) AÇILMASI
     if (interaction.isButton() && interaction.customId === 'open_embed_modal') {
         const modal = new ModalBuilder()
             .setCustomId('embed_creator_modal')
@@ -172,7 +218,6 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.showModal(modal);
     }
 
-    // 2. MODAL GÖNDƏRİLƏNDƏ KANALA EMBEDİN ATILMASI
     if (interaction.isModalSubmit() && interaction.customId === 'embed_creator_modal') {
         const title = interaction.fields.getTextInputValue('embed_title');
         const desc = interaction.fields.getTextInputValue('embed_desc');
@@ -219,7 +264,6 @@ client.on('interactionCreate', async (interaction) => {
             const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
 
             collector.on('collect', async m => {
-                // İstifadəçinin yazdığı şifrə mesajını təmizləmək (istəyə bağlı)
                 try { await m.delete(); } catch(e) {}
 
                 if (m.content === 'qaqa1212A') {
@@ -303,4 +347,3 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                            
