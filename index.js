@@ -24,8 +24,7 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.DirectMessages
+        GatewayIntentBits.MessageContent
     ]
 });
 
@@ -67,6 +66,10 @@ const commands = [
     new SlashCommandBuilder()
         .setName('logyoxla')
         .setDescription('Botun yaddaşdakı tənzimləmələrini yoxlayır')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('embed')
+        .setDescription('Admin şifrəsi ilə xüsusi embed yaradıcı paneli açar')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
@@ -126,33 +129,6 @@ client.on('guildMemberAdd', async (member) => {
         const role = member.guild.roles.cache.get(config.autoRoleId);
         if (role) await member.roles.add(role);
     } catch (err) { console.error('Oto-rol xətası:', err); }
-});
-
-// DM-də !EMBED ƏMRİ VƏ ŞİFRƏ YOXLAMASI
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-    
-    // Ancaq DM-də (message.guild yoxdursa) işləyir
-    if (!message.guild && message.content === '!embed') {
-        await message.reply('🔐 Botun gizli kodunu daxil edin:');
-
-        const filter = m => m.author.id === message.author.id;
-        const collector = message.channel.createMessageCollector({ filter, time: 30000, max: 1 });
-
-        collector.on('collect', async m => {
-            if (m.content === 'qaqa1212A') {
-                const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('open_embed_modal')
-                        .setLabel('✨ Embed Hazırla')
-                        .setStyle(ButtonStyle.Primary)
-                );
-                await m.reply({ content: '✅ Kod doğrudur! Aşağıdakı düyməyə basaraq embed yarada bilərsiniz:', components: [row] });
-            } else {
-                await m.reply('❌ Yanlış kod!');
-            }
-        });
-    }
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -236,6 +212,29 @@ client.on('interactionCreate', async (interaction) => {
                 ephemeral: true 
             });
         }
+        else if (commandName === 'embed') {
+            await interaction.reply({ content: '🔐 Zəhmət olmasa çata botun gizli kodunu yazın (30 saniyəniz var):', ephemeral: true });
+
+            const filter = m => m.author.id === interaction.user.id;
+            const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
+
+            collector.on('collect', async m => {
+                // İstifadəçinin yazdığı şifrə mesajını təmizləmək (istəyə bağlı)
+                try { await m.delete(); } catch(e) {}
+
+                if (m.content === 'qaqa1212A') {
+                    const row = new ActionRowBuilder().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('open_embed_modal')
+                            .setLabel('✨ Embed Hazırla')
+                            .setStyle(ButtonStyle.Primary)
+                    );
+                    await interaction.followUp({ content: '✅ Kod doğrudur! Aşağıdakı düyməyə basaraq panel açın:', components: [row], ephemeral: true });
+                } else {
+                    await interaction.followUp({ content: '❌ Yanlış kod!', ephemeral: true });
+                }
+            });
+        }
         else if (commandName === 'clear') {
             await interaction.deferReply({ ephemeral: true });
             const amount = options.getInteger('say');
@@ -304,4 +303,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-            
+                            
