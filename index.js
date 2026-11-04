@@ -101,42 +101,6 @@ client.once('ready', async () => {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
-
-    setTimeout(async () => {
-        try {
-            const settings = getSettings();
-            for (const [guildId, config] of Object.entries(settings)) {
-                if (config.logChannelId) {
-                    try {
-                        const guild = await client.guilds.fetch(guildId).catch(() => null);
-                        if (!guild) continue;
-                        const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
-                        if (channel) {
-                            let roleText = 'Təyin olunmayıb';
-                            if (config.autoRoleId) {
-                                const role = guild.roles.cache.get(config.autoRoleId);
-                                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
-                            }
-
-                            const embed = new EmbedBuilder()
-                                .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                                .setDescription('id.json faylından tənzimləmələrim uğurla yükləndi:')
-                                .addFields(
-                                    { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
-                                    { name: '🛡️ Status', value: 'Sabit fayldan oxudum, heç vaxt silinməz! 👍', inline: true }
-                                )
-                                .setColor('#00F2FE')
-                                .setTimestamp();
-                            
-                            await channel.send({ embeds: [embed] });
-                        }
-                    } catch (err) {
-                        console.error('Log kanalına mesaj atıla bilmədi:', err);
-                    }
-                }
-            }
-        } catch (e) { console.error('Restart log xətası:', e); }
-    }, 4000);
 });
 
 client.on('guildMemberAdd', async (member) => {
@@ -155,7 +119,6 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        // Əgər istifadəçinin artıq açıq ticket-i varsa, yenisini açmasın
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
         if (existingChannel) {
             return interaction.reply({ content: `❌ Sizin artıq açıq bir dəstək kanalınız var: ${existingChannel}`, ephemeral: true });
@@ -168,15 +131,15 @@ client.on('interactionCreate', async (interaction) => {
                 permissionOverwrites: [
                     {
                         id: interaction.guild.id,
-                        deny: [PermissionFlagsBits.ViewChannel] // Hər kəs üçün bağla
+                        deny: [PermissionFlagsBits.ViewChannel]
                     },
                     {
                         id: interaction.user.id,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles] // İstifadəçi üçün aç
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles]
                     },
                     {
                         id: client.user.id,
-                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] // Bot üçün aç
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels]
                     }
                 ]
             });
@@ -198,7 +161,7 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.reply({ content: `✅ Dəstək kanalınız yaradıldı: ${ticketChannel}`, ephemeral: true });
         } catch (err) {
             console.error(err);
-            await interaction.reply({ content: '❌ Ticket kanalı yaradılarkən xəta baş verdi! Botun kanalları idarə etmək icazəsini yoxlayın.', ephemeral: true });
+            await interaction.reply({ content: '❌ Ticket kanalı yaradılarkən xəta baş verdi!', ephemeral: true });
         }
     }
 
@@ -279,7 +242,7 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.editReply({ content: `✅ Embed uğurla <#${channelId}> kanalına göndərildi!` });
         } catch (err) {
             console.error(err);
-            await interaction.editReply({ content: '❌ Xəta baş verdi! ID-lərin düzgün olduğundan və botun həmin serverdə olduğundan əmin olun.' });
+            await interaction.editReply({ content: '❌ Xəta baş verdi! ID-lərin düzgün olduğundan əmin olun.' });
         }
     }
 
@@ -290,7 +253,7 @@ client.on('interactionCreate', async (interaction) => {
         if (commandName === 'dəstək') {
             const embed = new EmbedBuilder()
                 .setTitle('🎫 ASPROL Dəstək Sistemi')
-                .setDescription('Rehberlik və ya moderasiya komandamızla əlaqə saxlamaq üçün aşağıdakı düyməyə basaraq özünüzə özəl **Dəstək Tələbi (Ticket)** açın.')
+                .setDescription('Komandamızla əlaqə saxlamaq üçün aşağıdakı düyməyə basaraq özünüzə özəl **Dəstək (Ticket)** açın.')
                 .setColor('#5865F2');
 
             const row = new ActionRowBuilder().addComponents(
@@ -308,7 +271,7 @@ client.on('interactionCreate', async (interaction) => {
                 .setTitle('📊 Yeni Səsvermə')
                 .setDescription(topic)
                 .setColor('#F1C40F')
-                .setFooter({ text: `Səsverməni başlada: ${interaction.user.username}` })
+                .setFooter({ text: `Səsverməni başladı: ${interaction.user.username}` })
                 .setTimestamp();
 
             await interaction.reply({ content: '✅ Səsvermə başladıldı!', ephemeral: true });
@@ -369,7 +332,6 @@ client.on('interactionCreate', async (interaction) => {
         }
         else if (commandName === 'logyoxla') {
             await interaction.deferReply({ ephemeral: true });
-            
             const settings = getSettings();
             const config = settings[guild.id] || Object.values(settings)[0];
 
@@ -377,39 +339,24 @@ client.on('interactionCreate', async (interaction) => {
                 return interaction.editReply({ content: '❌ `id.json` faylında heç bir log kanalı tapılmadı!' });
             }
 
-            let roleText = 'Təyin olunmayıb';
-            if (config.autoRoleId) {
-                const role = guild.roles.cache.get(config.autoRoleId);
-                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub (Rol tapılmadı)';
-            }
-
             const embed = new EmbedBuilder()
                 .setTitle('🔍 ASPROL JSON Yoxlama Sorğusu')
-                .setDescription('id.json faylından oxunan cari məlumatlarım:')
-                .addFields(
-                    { name: '⚙️ Fayldakı Oto-Rol', value: roleText, inline: true },
-                    { name: '🛡️ Status', value: 'Həmişə yerindədir! 👍', inline: true }
-                )
+                .setDescription('id.json faylından oxunan tənzimləmələr uğurla işləyir! 👍')
                 .setColor('#10B981')
                 .setTimestamp();
 
             const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
             if (channel) {
                 await channel.send({ embeds: [embed] });
-                await interaction.editReply({ content: `✅ Məlumatlar id.json faylından oxunub ${channel} kanalına göndərildi!` });
+                await interaction.editReply({ content: `✅ Log kanala göndərildi!` });
             } else {
-                await interaction.editReply({ content: `⚠️ Məlumatlar fayldadır, lakin təyin olunan log kanalı tapılmadı!` });
+                await interaction.editReply({ content: `⚠️ Log kanalı tapılmadı!` });
             }
         }
     } catch (err) {
         console.error('Komanda xətası:', err);
-        if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ content: `❌ Xəta baş verdi.` }).catch(() => {});
-        } else {
-            await interaction.reply({ content: `❌ Xəta baş verdi.`, ephemeral: true }).catch(() => {});
-        }
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                                
+                                     
