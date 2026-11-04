@@ -156,7 +156,7 @@ client.on('guildMemberAdd', async (member) => {
         }
     } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
-    client.on('interactionCreate', async (interaction) => {
+            client.on('interactionCreate', async (interaction) => {
     // 1. TICKET OLUŞTURMA BUTONU
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -487,8 +487,8 @@ client.on('guildMemberAdd', async (member) => {
                 });
                 await interaction.reply({ content: `✅ Başarıyla **${voiceChannel.name}** kanalına katıldım!`, ephemeral: true });
             } catch (err) {
-                console.error(err);
-                await interaction.reply({ content: '❌ Ses kanalına bağlanırken bir hata oluştu!', ephemeral: true });
+                console.error('Ses bağlantı hatası:', err);
+                await interaction.reply({ content: `❌ Ses hatası detayı: \`\`\`${err.message}\`\`\``, ephemeral: true });
             }
         }
     } catch (err) {
@@ -497,4 +497,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                                      
+                                     
