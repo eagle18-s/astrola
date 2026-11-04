@@ -1,37 +1,62 @@
 const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
-// 1. EXPRESS WEB SERVER
+// 1. MONGODB CONNECTION
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+    console.error('[CRITICAL]: MONGO_URI Environment Variable tapılmadı!');
+}
+
+mongoose.connect(MONGO_URI).then(() => {
+    console.log('[DATABASE]: MongoDB bulud bazasına uğurla qoşuldu!');
+}).catch(err => {
+    console.error('[DATABASE ERROR]: Qoşulma xətası:', err);
+});
+
+// Database Schemas
+const settingSchema = new mongoose.Schema({
+    guildId: { type: String, required: true, unique: true },
+    autoRoleId: String,
+    logChannelId: String
+});
+const Setting = mongoose.model('Setting', settingSchema);
+
+const leaderboardSchema = new mongoose.Schema({
+    name: String,
+    img: String,
+    score: Number
+});
+const Leaderboard = mongoose.model('Leaderboard', leaderboardSchema);
+
+// 2. EXPRESS WEB SERVER
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Leaderboard JSON API
-const lbFile = path.join(__dirname, 'leaderboard.json');
-
-function getLeaderboard() {
-    if (!fs.existsSync(lbFile)) {
-        fs.writeFileSync(lbFile, JSON.stringify([]));
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const list = await Leaderboard.find({});
+        res.json(list);
+    } catch (e) {
+        res.status(500).json([]);
     }
-    return JSON.parse(fs.readFileSync(lbFile, 'utf8'));
-}
-
-app.get('/api/leaderboard', (req, res) => {
-    res.json(getLeaderboard());
 });
 
-app.post('/api/leaderboard', (req, res) => {
-    const { name, img, score } = req.body;
-    if (!name || !score) return res.status(400).send('Məlumat əksikdir');
-    
-    let list = getLeaderboard();
-    list.push({ name, img, score });
-    fs.writeFileSync(lbFile, JSON.stringify(list, null, 2));
-    res.status(200).send('Əlavə olundu');
+app.post('/api/leaderboard', async (req, res) => {
+    try {
+        const { name, img, score } = req.body;
+        if (!name || !score) return res.status(400).send('Məlumat əksikdir');
+        
+        await Leaderboard.create({ name, img, score });
+        res.status(200).send('Əlavə olundu');
+    } catch (e) {
+        res.status(500).send('Xəta');
+    }
 });
 
 app.get('/', (req, res) => {
@@ -42,7 +67,7 @@ app.listen(PORT, () => {
     console.log(`[SERVER]: Veb Sayt ${PORT} portunda aktivdir.`);
 });
 
-// 2. DISCORD BOT
+// 3. DISCORD BOT
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -51,20 +76,6 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
-
-// Settings JSON (Oto-rol və Log kanalı üçün)
-const settingsFile = path.join(__dirname, 'settings.json');
-
-function getSettings() {
-    if (!fs.existsSync(settingsFile)) {
-        fs.writeFileSync(settingsFile, JSON.stringify({}));
-    }
-    return JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-}
-
-function saveSettings(data) {
-    fs.writeFileSync(settingsFile, JSON.stringify(data, null, 2));
-}
 
 // SLASH COMMANDS DEFINITION
 const commands = [
@@ -113,49 +124,52 @@ client.once('ready', async () => {
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
 
-    // BOT RESTART OLANDA TƏYİN OLUNMUŞ LOG KANALINA XATIRLATMA GÖNDƏRMƏSİ
-    const settings = getSettings();
-    for (const [guildId, config] of Object.entries(settings)) {
-        if (config.logChannelId) {
-            try {
-                const guild = await client.guilds.fetch(guildId);
-                const channel = await guild.channels.fetch(config.logChannelId);
-                if (channel) {
-                    let roleText = 'Təyin olunmayıb';
-                    if (config.autoRoleId) {
-                        const role = guild.roles.cache.get(config.autoRoleId);
-                        roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
-                    }
+    // BOT RESTART OLANDA MONGODB-DƏN OXUYUB LOG KANALINA XATIRLATMA GÖNDəRMƏSİ
+    setTimeout(async () => {
+        try {
+            const allSettings = await Setting.find({});
+            for (const config of allSettings) {
+                if (config.logChannelId) {
+                    try {
+                        const guild = await client.guilds.fetch(config.guildId);
+                        const channel = await guild.channels.fetch(config.logChannelId);
+                        if (channel) {
+                            let roleText = 'Təyin olunmayıb';
+                            if (config.autoRoleId) {
+                                const role = guild.roles.cache.get(config.autoRoleId);
+                                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
+                            }
 
-                    const embed = new EmbedBuilder()
-                        .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                        .setDescription('Sistemlər uğurla işə düşdü. Yaddaşda saxlanılan cari tənzimləmələrimiz:')
-                        .addFields(
-                            { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
-                            { name: '🛡️ Status', value: 'Hər şey nəzarət altındadır, unutmamışam! 👍', inline: true }
-                        )
-                        .setColor('#00F2FE')
-                        .setTimestamp();
-                    
-                    await channel.send({ embeds: [embed] });
+                            const embed = new EmbedBuilder()
+                                .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
+                                .setDescription('MongoDB bulud bazasından tənzimləmələrim uğurla yükləndi:')
+                                .addFields(
+                                    { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
+                                    { name: '🛡️ Status', value: 'Unutmamışam, bazadan oxudum! 👍', inline: true }
+                                )
+                                .setColor('#00F2FE')
+                                .setTimestamp();
+                            
+                            await channel.send({ embeds: [embed] });
+                        }
+                    } catch (err) {
+                        console.error('Log kanalına mesaj atıla bilmədi:', err);
+                    }
                 }
-            } catch (err) {
-                console.error(`Log kanalına mesaj göndərilə bilmədi (${guildId}):`, err);
             }
-        }
-    }
+        } catch (e) { console.error('Restart log xətası:', e); }
+    }, 4000);
 });
 
 // OTO-ROL EVENT
 client.on('guildMemberAdd', async (member) => {
-    const settings = getSettings();
-    const config = settings[member.guild.id];
-    if (!config || !config.autoRoleId) return;
-
     try {
+        const config = await Setting.findOne({ guildId: member.guild.id });
+        if (!config || !config.autoRoleId) return;
+
         const role = member.guild.roles.cache.get(config.autoRoleId);
         if (role) await member.roles.add(role);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error('Oto-rol xətası:', err); }
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -191,35 +205,36 @@ client.on('interactionCreate', async (interaction) => {
     }
     else if (commandName === 'oto-rol') {
         const role = options.getRole('rol');
-        let settings = getSettings();
-        if (!settings[guild.id]) settings[guild.id] = {};
-        settings[guild.id].autoRoleId = role.id;
-        saveSettings(settings);
+        await Setting.findOneAndUpdate(
+            { guildId: guild.id },
+            { autoRoleId: role.id },
+            { upsert: true, new: true }
+        );
 
-        const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə avtomatik olaraq **${role.name}** veriləcək.`).setColor('#10B981');
+        const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə avtomatik olaraq **${role.name}** veriləcək (Bazaya yazıldı).`).setColor('#10B981');
         await interaction.reply({ embeds: [embed] });
     }
     else if (commandName === 'log') {
         const channel = options.getChannel('kanal');
-        let settings = getSettings();
-        if (!settings[guild.id]) settings[guild.id] = {};
-        settings[guild.id].logChannelId = channel.id;
-        saveSettings(settings);
+        await Setting.findOneAndUpdate(
+            { guildId: guild.id },
+            { logChannelId: channel.id },
+            { upsert: true, new: true }
+        );
 
-        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot xatırlatmaları ${channel} kanalına göndərəcək.`).setColor('#5865F2');
+        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot xatırlatmaları ${channel} kanalına göndərəcək (Bazaya yazıldı).`).setColor('#5865F2');
         await interaction.reply({ embeds: [embed] });
     }
     else if (commandName === 'logyoxla') {
-        const settings = getSettings();
-        const config = settings[guild.id];
+        const config = await Setting.findOne({ guildId: guild.id });
 
         if (!config || !config.logChannelId) {
-            return interaction.reply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb! Əvvəlcə `/log #kanal` yazın.', ephemeral: true });
+            return interaction.reply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb!', ephemeral: true });
         }
 
         const channel = guild.channels.cache.get(config.logChannelId);
         if (!channel) {
-            return interaction.reply({ content: '❌ Əvvəl təyin olunan log kanalı tapılmadı (silinmiş ola bilər).', ephemeral: true });
+            return interaction.reply({ content: '❌ Log kanalı tapılmadı.', ephemeral: true });
         }
 
         let roleText = 'Təyin olunmayıb';
@@ -229,19 +244,19 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         const embed = new EmbedBuilder()
-            .setTitle('🔍 ASPROL Log Yoxlama Sorğusu')
-            .setDescription('Yaddaşda saxlanılan cari məlumatlarım tamamilə yerindədir:')
+            .setTitle('🔍 ASPROL MongoDB Yoxlama Sorğusu')
+            .setDescription('Bulud bazasından oxunan cari məlumatlarım:')
             .addFields(
-                { name: '⚙️ Yaddaşdakı Oto-Rol', value: roleText, inline: true },
-                { name: '🛡️ Status', value: 'Unutmamışam, hər şey yadımadadır! 👍', inline: true }
+                { name: '⚙️ Bazadakı Oto-Rol', value: roleText, inline: true },
+                { name: '🛡️ Status', value: 'Buluddadırmı? Bəli, heç vaxt silinməz! 👍', inline: true }
             )
             .setColor('#10B981')
             .setTimestamp();
 
         await channel.send({ embeds: [embed] });
-        await interaction.reply({ content: `✅ Məlumatlar uğurla ${channel} kanalına göndərildi!`, ephemeral: true });
+        await interaction.reply({ content: `✅ Məlumatlar buluddan oxunub ${channel} kanalına göndərildi!`, ephemeral: true });
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-    
+                       
