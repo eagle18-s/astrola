@@ -134,13 +134,11 @@ client.on('guildMemberAdd', async (member) => {
         const config = settings[member.guild.id] || Object.values(settings)[0];
         if (!config) return;
 
-        // Oto-rol
         if (config.autoRoleId) {
             const role = member.guild.roles.cache.get(config.autoRoleId);
             if (role) await member.roles.add(role);
         }
 
-        // Log Kanalına Bildirim
         if (config.logChannelId) {
             const logChannel = member.guild.channels.cache.get(config.logChannelId);
             if (logChannel) {
@@ -154,8 +152,7 @@ client.on('guildMemberAdd', async (member) => {
         }
     } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
-
-client.on('interactionCreate', async (interaction) => {
+            client.on('interactionCreate', async (interaction) => {
     // 1. TICKET OLUŞTURMA BUTONU
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -454,4 +451,27 @@ client.on('interactionCreate', async (interaction) => {
                     { name: '📅 Sunucuya Katılım', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true },
                     { name: '📅 Hesap Kuruluş', value: `<t:${Math.floor(user.createdTimestamp / 1000)}:R>`, inline: false }
                 )
-                .setColor('#E67E
+                .setColor('#E67E22')
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed] });
+        }
+        else if (commandName === 'yardim') {
+            const embed = new EmbedBuilder()
+                .setTitle('📖 ASPROL Bot Yardım Menüsü')
+                .setDescription('Sunucumuzdaki mevcut komutların listesi:')
+                .addFields(
+                    { name: '🛠️ Moderasyon & Yönetim', value: '`/moderasyon`, `/sil`, `/yasakla`, `/at`, `/embed`, `/logkontrol`', inline: false },
+                    { name: '🎫 Destek & Etkileşim', value: '`/destek`, `/sorgu`, `/anket`', inline: false },
+                    { name: '🎮 Eğlence & Bilgi', value: '`/yazitura`, `/zar`, `/sunucubilgi`, `/kullanicibilgi`, `/avatar`, `/yardim`', inline: false }
+                )
+                .setColor('#2ECC71')
+                .setTimestamp();
+            await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+    } catch (err) {
+        console.error('Komut hatası:', err);
+    }
+});
+
+client.login(process.env.DISCORD_TOKEN);
+            
