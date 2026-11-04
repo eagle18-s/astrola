@@ -1,13 +1,14 @@
 {
   "name": "asprol-bot-web",
   "version": "1.0.0",
-  "description": "Discord Bot and Web Server",
+  "description": "Discord Bot and Web Server with MongoDB",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3"
   }
 }
