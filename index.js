@@ -1,4 +1,19 @@
-const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { 
+    Client, 
+    GatewayIntentBits, 
+    EmbedBuilder, 
+    REST, 
+    Routes, 
+    SlashCommandBuilder, 
+    PermissionFlagsBits, 
+    ActionRowBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    ModalBuilder, 
+    TextInputBuilder, 
+    TextInputStyle,
+    ChannelType
+} = require('discord.js');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -68,6 +83,14 @@ const commands = [
     new SlashCommandBuilder()
         .setName('embed')
         .setDescription('Admin şifrəsi ilə xüsusi embed yaradıcı paneli açar')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('sorğu')
+        .setDescription('Sürətli səsvermə embedi yaradar')
+        .addStringOption(opt => opt.setName('movzu').setDescription('Səsvermə mövzusu').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('dəstək')
+        .setDescription('Dəstək (Ticket) panelini göndərər')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
@@ -128,6 +151,70 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+    // 1. TICKET YARATMA DÜYMƏSİ
+    if (interaction.isButton() && interaction.customId === 'create_ticket') {
+        const ticketChannelName = `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        // Əgər istifadəçinin artıq açıq ticket-i varsa, yenisini açmasın
+        const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
+        if (existingChannel) {
+            return interaction.reply({ content: `❌ Sizin artıq açıq bir dəstək kanalınız var: ${existingChannel}`, ephemeral: true });
+        }
+
+        try {
+            const ticketChannel = await interaction.guild.channels.create({
+                name: ticketChannelName,
+                type: ChannelType.GuildText,
+                permissionOverwrites: [
+                    {
+                        id: interaction.guild.id,
+                        deny: [PermissionFlagsBits.ViewChannel] // Hər kəs üçün bağla
+                    },
+                    {
+                        id: interaction.user.id,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles] // İstifadəçi üçün aç
+                    },
+                    {
+                        id: client.user.id,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] // Bot üçün aç
+                    }
+                ]
+            });
+
+            const embed = new EmbedBuilder()
+                .setTitle('📩 ASPROL Dəstək Mərkəzi')
+                .setDescription(`Xoş gəldiniz <@${interaction.user.id}>!\nZəhmət olmasa probleminizi və ya sualınızı ətraflı yazın. Adminlərimiz tezliklə cavab verəcək.`)
+                .setColor('#00F2FE')
+                .setTimestamp();
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('close_ticket')
+                    .setLabel('🔒 Ticket-i Bağla')
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+            await ticketChannel.send({ content: `<@${interaction.user.id}>`, embeds: [embed], components: [row] });
+            await interaction.reply({ content: `✅ Dəstək kanalınız yaradıldı: ${ticketChannel}`, ephemeral: true });
+        } catch (err) {
+            console.error(err);
+            await interaction.reply({ content: '❌ Ticket kanalı yaradılarkən xəta baş verdi! Botun kanalları idarə etmək icazəsini yoxlayın.', ephemeral: true });
+        }
+    }
+
+    // 2. TICKET BAĞLAMA DÜYMƏSİ
+    if (interaction.isButton() && interaction.customId === 'close_ticket') {
+        await interaction.reply('🔒 Bu dəstək kanalı 5 saniyə sonra silinəcək...');
+        setTimeout(async () => {
+            try {
+                await interaction.channel.delete();
+            } catch (err) {
+                console.error('Kanal silinmə xətası:', err);
+            }
+        }, 5000);
+    }
+
+    // 3. EMBED MODAL
     if (interaction.isButton() && interaction.customId === 'open_embed_modal') {
         const modal = new ModalBuilder()
             .setCustomId('embed_creator_modal')
@@ -200,7 +287,36 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName, options, guild } = interaction;
 
     try {
-        if (commandName === 'moderasiya') {
+        if (commandName === 'dəstək') {
+            const embed = new EmbedBuilder()
+                .setTitle('🎫 ASPROL Dəstək Sistemi')
+                .setDescription('Rehberlik və ya moderasiya komandamızla əlaqə saxlamaq üçün aşağıdakı düyməyə basaraq özünüzə özəl **Dəstək Tələbi (Ticket)** açın.')
+                .setColor('#5865F2');
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('create_ticket')
+                    .setLabel('📩 Ticket Aç')
+                    .setStyle(ButtonStyle.Success)
+            );
+
+            await interaction.reply({ embeds: [embed], components: [row] });
+        }
+        else if (commandName === 'sorğu') {
+            const topic = options.getString('movzu');
+            const embed = new EmbedBuilder()
+                .setTitle('📊 Yeni Səsvermə')
+                .setDescription(topic)
+                .setColor('#F1C40F')
+                .setFooter({ text: `Səsverməni başlada: ${interaction.user.username}` })
+                .setTimestamp();
+
+            await interaction.reply({ content: '✅ Səsvermə başladıldı!', ephemeral: true });
+            const pollMessage = await interaction.channel.send({ embeds: [embed] });
+            await pollMessage.react('👍');
+            await pollMessage.react('👎');
+        }
+        else if (commandName === 'moderasiya') {
             await interaction.reply({ 
                 embeds: [new EmbedBuilder().setTitle('🛡️ ASPROL Pro Moderasiya Paneli').setDescription('Menudan əməliyyat seçin.').setColor('#5865F2')],
                 ephemeral: true 
@@ -296,3 +412,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+                                
