@@ -28,9 +28,9 @@ const client = new Client({
     ]
 });
 
-// settings.json faylından oxumaq üçün funksiya
+// id.json faylından oxumaq üçün funksiya
 function getSettings() {
-    const settingsPath = path.join(__dirname, 'settings.json');
+    const settingsPath = path.join(__dirname, 'id.json');
     if (!fs.existsSync(settingsPath)) return {};
     try {
         const data = fs.readFileSync(settingsPath, 'utf8');
@@ -40,7 +40,7 @@ function getSettings() {
     }
 }
 
-// SLASH COMMANDS DEFINITION (Log və oto-rol əmrləri silindi, hər şey json-a inteqrasiya olundu)
+// SLASH COMMANDS DEFINITION
 const commands = [
     new SlashCommandBuilder().setName('moderasiya').setDescription('Estetik Moderasiya Panelini Açar'),
     new SlashCommandBuilder()
@@ -77,7 +77,7 @@ client.once('ready', async () => {
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
 
-    // BOT RESTART OLANDA SETTINGS.JSON-DAN OXUYUB LOG KANALINA XATIRLATMA GÖNDəRMƏSİ
+    // BOT RESTART OLANDA ID.JSON-DAN OXUYUB LOG KANALINA XATIRLATMA GÖNDƏRMƏSİ
     setTimeout(async () => {
         try {
             const settings = getSettings();
@@ -95,7 +95,7 @@ client.once('ready', async () => {
 
                             const embed = new EmbedBuilder()
                                 .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                                .setDescription('Sabit JSON faylından tənzimləmələrim uğurla yükləndi:')
+                                .setDescription('id.json faylından tənzimləmələrim uğurla yükləndi:')
                                 .addFields(
                                     { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
                                     { name: '🛡️ Status', value: 'Sabit fayldan oxudum, heç vaxt silinməz! 👍', inline: true }
@@ -114,7 +114,7 @@ client.once('ready', async () => {
     }, 4000);
 });
 
-// OTO-ROL EVENT (Yeni gələnlərə avtomatik rol vermə)
+// OTO-ROL EVENT
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
@@ -167,7 +167,7 @@ client.on('interactionCreate', async (interaction) => {
             const config = settings[guild.id];
 
             if (!config || !config.logChannelId) {
-                return interaction.editReply({ content: '❌ `settings.json` faylında bu server üçün log kanalı tapılmadı!' });
+                return interaction.editReply({ content: '❌ `id.json` faylında bu server üçün log kanalı tapılmadı!' });
             }
 
             let roleText = 'Təyin olunmayıb';
@@ -178,7 +178,7 @@ client.on('interactionCreate', async (interaction) => {
 
             const embed = new EmbedBuilder()
                 .setTitle('🔍 ASPROL JSON Yoxlama Sorğusu')
-                .setDescription('Sabit fayldan oxunan cari məlumatlarım:')
+                .setDescription('id.json faylından oxunan cari məlumatlarım:')
                 .addFields(
                     { name: '⚙️ Fayldakı Oto-Rol', value: roleText, inline: true },
                     { name: '🛡️ Status', value: 'Həmişə yerindədir! 👍', inline: true }
@@ -189,7 +189,7 @@ client.on('interactionCreate', async (interaction) => {
             const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
             if (channel) {
                 await channel.send({ embeds: [embed] });
-                await interaction.editReply({ content: `✅ Məlumatlar fayldan oxunub ${channel} kanalına göndərildi!` });
+                await interaction.editReply({ content: `✅ Məlumatlar id.json faylından oxunub ${channel} kanalına göndərildi!` });
             } else {
                 await interaction.editReply({ content: `⚠️ Məlumatlar fayldadır, lakin təyin olunan log kanalı tapılmadı!` });
             }
@@ -205,4 +205,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                            
+                         
