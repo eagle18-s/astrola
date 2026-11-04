@@ -73,64 +73,29 @@ const commands = [
 
 client.once('ready', async () => {
     console.log(`[BOT]: ${client.user.tag} adı ilə giriş edildi!`);
+    
+    // API Açarını yoxlamaq üçün log
+    if (process.env.GROQ_API_KEY) {
+        console.log(`[AI]: GROQ_API_KEY uğurla oxundu (Uzunluq: ${process.env.GROQ_API_KEY.length})`);
+    } else {
+        console.log(`[AI XƏTA]: GROQ_API_KEY tapılmadı! Render Environment bölməsini yoxlayın.`);
+    }
+
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
         console.log('[BOT]: Slash komandaları yükləndi.');
     } catch (error) { console.error(error); }
-
-    setTimeout(async () => {
-        try {
-            const settings = getSettings();
-            for (const [guildId, config] of Object.entries(settings)) {
-                if (config.logChannelId) {
-                    try {
-                        const guild = await client.guilds.fetch(guildId).catch(() => null);
-                        if (!guild) continue;
-                        const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
-                        if (channel) {
-                            let roleText = 'Təyin olunmayıb';
-                            if (config.autoRoleId) {
-                                const role = guild.roles.cache.get(config.autoRoleId);
-                                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
-                            }
-
-                            const embed = new EmbedBuilder()
-                                .setTitle('🤖 ASPROL Bot Yenidən Başladı!')
-                                .setDescription('id.json faylından tənzimləmələrim uğurla yükləndi:')
-                                .addFields(
-                                    { name: '⚙️ Aktiv Oto-Rol', value: roleText, inline: true },
-                                    { name: '🛡️ Status', value: 'Sabit fayldan oxudum, heç vaxt silinməz! 👍', inline: true }
-                                )
-                                .setColor('#00F2FE')
-                                .setTimestamp();
-                            
-                            await channel.send({ embeds: [embed] });
-                        }
-                    } catch (err) {
-                        console.error('Log kanalına mesaj atıla bilmədi:', err);
-                    }
-                }
-            }
-        } catch (e) { console.error('Restart log xətası:', e); }
-    }, 4000);
-});
-
-client.on('guildMemberAdd', async (member) => {
-    try {
-        const settings = getSettings();
-        const config = settings[member.guild.id] || Object.values(settings)[0];
-        if (!config || !config.autoRoleId) return;
-
-        const role = member.guild.roles.cache.get(config.autoRoleId);
-        if (role) await member.roles.add(role);
-    } catch (err) { console.error('Oto-rol xətası:', err); }
 });
 
 // GROQ AI FETCH FUNKSİYASI
 async function askGroq(promptText) {
-    if (!process.env.GROQ_API_KEY) return null;
+    if (!process.env.GROQ_API_KEY) {
+        console.log('[AI XƏTA]: Açar yoxdur.');
+        return null;
+    }
     try {
+        console.log(`[AI]: Groq-a sorğu göndərilir... Mətn: "${promptText}"`);
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -148,9 +113,11 @@ async function askGroq(promptText) {
         });
 
         const data = await response.json();
+        console.log('[AI CAVAB]:', JSON.stringify(data));
+        
         return data.choices?.[0]?.message?.content?.trim() || null;
     } catch (err) {
-        console.error('Groq Fetch Xətası:', err);
+        console.error('Groq Fetch Xətası (Catch):', err);
         return null;
     }
 }
@@ -170,7 +137,7 @@ client.on('messageCreate', async (message) => {
         if (aiReply) {
             await message.reply(aiReply);
         } else {
-            await message.reply('❌ Süni intellekt cavab verə bilmədi.');
+            await message.reply('❌ Süni intellekt cavab verə bilmədi (Açarı yoxlayın).');
         }
     } catch (err) {
         console.error('Mesaj xətası:', err);
@@ -292,7 +259,7 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.editReply(`🔨 ${user.tag} ban olundu.`);
         }
         else if (commandName === 'kick') {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferQueryResult(); // safe
             const user = options.getUser('istifadeci');
             await guild.members.kick(user);
             await interaction.editReply(`👢 ${user.tag} atıldı.`);
@@ -304,7 +271,6 @@ client.on('interactionCreate', async (interaction) => {
         }
         else if (commandName === 'logyoxla') {
             await interaction.deferReply({ ephemeral: true });
-            
             const settings = getSettings();
             const config = settings[guild.id] || Object.values(settings)[0];
 
@@ -312,39 +278,28 @@ client.on('interactionCreate', async (interaction) => {
                 return interaction.editReply({ content: '❌ `id.json` faylında heç bir log kanalı tapılmadı!' });
             }
 
-            let roleText = 'Təyin olunmayıb';
+            let roleText = 'Təyin olunmayıby';
             if (config.autoRoleId) {
                 const role = guild.roles.cache.get(config.autoRoleId);
-                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub (Rol tapılmadı)';
+                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
             }
 
             const embed = new EmbedBuilder()
                 .setTitle('🔍 ASPROL JSON Yoxlama Sorğusu')
-                .setDescription('id.json faylından oxunan cari məlumatlarım:')
-                .addFields(
-                    { name: '⚙️ Fayldakı Oto-Rol', value: roleText, inline: true },
-                    { name: '🛡️ Status', value: 'Həmişə yerindədir! 👍', inline: true }
-                )
-                .setColor('#10B981')
-                .setTimestamp();
+                .addFields({ name: '⚙️ Oto-Rol', value: roleText, inline: true })
+                .setColor('#10B981');
 
             const channel = await guild.channels.fetch(config.logChannelId).catch(() => null);
             if (channel) {
                 await channel.send({ embeds: [embed] });
-                await interaction.editReply({ content: `✅ Məlumatlar id.json faylından oxunub ${channel} kanalına göndərildi!` });
+                await interaction.editReply({ content: `✅ Log göndərildi!` });
             } else {
-                await interaction.editReply({ content: `⚠️ Məlumatlar fayldadır, lakin təyin olunan log kanalı tapılmadı!` });
+                await interaction.editReply({ content: `⚠️ Kanal tapılmadı!` });
             }
         }
     } catch (err) {
         console.error('Komanda xətası:', err);
-        if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ content: `❌ Xəta baş verdi.` }).catch(() => {});
-        } else {
-            await interaction.reply({ content: `❌ Xəta baş verdi.`, ephemeral: true }).catch(() => {});
-        }
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-
