@@ -39,7 +39,8 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
@@ -112,7 +113,10 @@ const commands = [
         .addUserOption(opt => opt.setName('kullanici').setDescription('Kullanıcı')),
     new SlashCommandBuilder()
         .setName('yardim')
-        .setDescription('Botun tüm komutlarını listeler')
+        .setDescription('Botun tüm komutlarını listeler'),
+    new SlashCommandBuilder()
+        .setName('qoşul')
+        .setDescription('Bulunduğun ses kanalına katılır')
 ].map(cmd => cmd.toJSON());
 
 client.once('ready', async () => {
@@ -152,7 +156,7 @@ client.on('guildMemberAdd', async (member) => {
         }
     } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
-            client.on('interactionCreate', async (interaction) => {
+    client.on('interactionCreate', async (interaction) => {
     // 1. TICKET OLUŞTURMA BUTONU
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -183,7 +187,7 @@ client.on('guildMemberAdd', async (member) => {
             });
 
             const embed = new EmbedBuilder()
-                .setTitle('📩 ASPROL Destek Merkezi')
+                .setTitle('📩 ASTROL Destek Merkezi')
                 .setDescription(`Hoş geldiniz <@${interaction.user.id}>!\nLütfen sorununuzu veya talebinizi detaylı bir şekilde yazın. Yetkililerimiz en kısa sürede ilgilenecektir.`)
                 .setColor('#00F2FE')
                 .setTimestamp();
@@ -296,7 +300,7 @@ client.on('guildMemberAdd', async (member) => {
     try {
         if (commandName === 'destek') {
             const embed = new EmbedBuilder()
-                .setTitle('🎫 ASPROL Destek Sistemi')
+                .setTitle('🎫 ASTROL Destek Sistemi')
                 .setDescription('Ekibimizle iletişim kurmak için aşağıdaki düğmeye basarak kendinize özel bir **Destek (Ticket)** açın.')
                 .setColor('#5865F2');
 
@@ -348,7 +352,7 @@ client.on('guildMemberAdd', async (member) => {
         }
         else if (commandName === 'moderasyon') {
             await interaction.reply({ 
-                embeds: [new EmbedBuilder().setTitle('🛡️ ASPROL Pro Moderasyon Paneli').setDescription('Menüden bir işlem seçin.').setColor('#5865F2')],
+                embeds: [new EmbedBuilder().setTitle('🛡️ ASTROL Pro Moderasyon Paneli').setDescription('Menüden bir işlem seçin.').setColor('#5865F2')],
                 ephemeral: true 
             });
         }
@@ -407,7 +411,7 @@ client.on('guildMemberAdd', async (member) => {
             }
 
             const embed = new EmbedBuilder()
-                .setTitle('🔍 ASPROL JSON Kontrol Sorgusu')
+                .setTitle('🔍 ASTROL JSON Kontrol Sorgusu')
                 .setDescription('id.json dosyasından okunan ayarlar başarıyla çalışıyor! 👍')
                 .setColor('#10B981')
                 .setTimestamp();
@@ -457,16 +461,35 @@ client.on('guildMemberAdd', async (member) => {
         }
         else if (commandName === 'yardim') {
             const embed = new EmbedBuilder()
-                .setTitle('📖 ASPROL Bot Yardım Menüsü')
+                .setTitle('📖 ASTROL Bot Yardım Menüsü')
                 .setDescription('Sunucumuzdaki mevcut komutların listesi:')
                 .addFields(
                     { name: '🛠️ Moderasyon & Yönetim', value: '`/moderasyon`, `/sil`, `/yasakla`, `/at`, `/embed`, `/logkontrol`', inline: false },
                     { name: '🎫 Destek & Etkileşim', value: '`/destek`, `/sorgu`, `/anket`', inline: false },
-                    { name: '🎮 Eğlence & Bilgi', value: '`/yazitura`, `/zar`, `/sunucubilgi`, `/kullanicibilgi`, `/avatar`, `/yardim`', inline: false }
+                    { name: '🎮 Eğlence & Bilgi', value: '`/yazitura`, `/zar`, `/sunucubilgi`, `/kullanicibilgi`, `/avatar`, `/yardim`, `/qoşul`', inline: false }
                 )
                 .setColor('#2ECC71')
                 .setTimestamp();
             await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+        else if (commandName === 'qoşul') {
+            const voiceChannel = interaction.member.voice.channel;
+            if (!voiceChannel) {
+                return interaction.reply({ content: '❌ Önce bir ses kanalına girmelisin!', ephemeral: true });
+            }
+
+            try {
+                const { joinVoiceChannel } = require('@discordjs/voice');
+                joinVoiceChannel({
+                    channelId: voiceChannel.id,
+                    guildId: interaction.guild.id,
+                    adapterCreator: interaction.guild.voiceAdapterCreator,
+                });
+                await interaction.reply({ content: `✅ Başarıyla **${voiceChannel.name}** kanalına katıldım!`, ephemeral: true });
+            } catch (err) {
+                console.error(err);
+                await interaction.reply({ content: '❌ Ses kanalına bağlanırken bir hata oluştu!', ephemeral: true });
+            }
         }
     } catch (err) {
         console.error('Komut hatası:', err);
@@ -474,4 +497,4 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-            
+                                      
