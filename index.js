@@ -3,7 +3,10 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
-// 1. EXPRESS WEB SERVER
+// 1. AÇARI BİRBAŞA KODA DAXİL EDİRİK
+const GROQ_API_KEY = "Gsk_F2Ix4eg42uyxM7GEiaoDWGdyb3FY7Hg5VyDStED7bQkcUC1V6g2O";
+
+// 2. EXPRESS WEB SERVER
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,7 +21,7 @@ app.listen(PORT, () => {
     console.log(`[SERVER]: Veb Sayt ${PORT} portunda aktivdir.`);
 });
 
-// 2. DISCORD BOT
+// 3. DISCORD BOT
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -73,14 +76,6 @@ const commands = [
 
 client.once('ready', async () => {
     console.log(`[BOT]: ${client.user.tag} adı ilə giriş edildi!`);
-    
-    // API Açarını yoxlamaq üçün log
-    if (process.env.GROQ_API_KEY) {
-        console.log(`[AI]: GROQ_API_KEY uğurla oxundu (Uzunluq: ${process.env.GROQ_API_KEY.length})`);
-    } else {
-        console.log(`[AI XƏTA]: GROQ_API_KEY tapılmadı! Render Environment bölməsini yoxlayın.`);
-    }
-
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
@@ -90,16 +85,11 @@ client.once('ready', async () => {
 
 // GROQ AI FETCH FUNKSİYASI
 async function askGroq(promptText) {
-    if (!process.env.GROQ_API_KEY) {
-        console.log('[AI XƏTA]: Açar yoxdur.');
-        return null;
-    }
     try {
-        console.log(`[AI]: Groq-a sorğu göndərilir... Mətn: "${promptText}"`);
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -113,11 +103,9 @@ async function askGroq(promptText) {
         });
 
         const data = await response.json();
-        console.log('[AI CAVAB]:', JSON.stringify(data));
-        
         return data.choices?.[0]?.message?.content?.trim() || null;
     } catch (err) {
-        console.error('Groq Fetch Xətası (Catch):', err);
+        console.error('Groq Fetch Xətası:', err);
         return null;
     }
 }
@@ -137,7 +125,7 @@ client.on('messageCreate', async (message) => {
         if (aiReply) {
             await message.reply(aiReply);
         } else {
-            await message.reply('❌ Süni intellekt cavab verə bilmədi (Açarı yoxlayın).');
+            await message.reply('❌ Süni intellekt cavab verə bilmədi.');
         }
     } catch (err) {
         console.error('Mesaj xətası:', err);
@@ -259,7 +247,7 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.editReply(`🔨 ${user.tag} ban olundu.`);
         }
         else if (commandName === 'kick') {
-            await interaction.deferQueryResult(); // safe
+            await interaction.deferReply({ ephemeral: true });
             const user = options.getUser('istifadeci');
             await guild.members.kick(user);
             await interaction.editReply(`👢 ${user.tag} atıldı.`);
@@ -278,7 +266,7 @@ client.on('interactionCreate', async (interaction) => {
                 return interaction.editReply({ content: '❌ `id.json` faylında heç bir log kanalı tapılmadı!' });
             }
 
-            let roleText = 'Təyin olunmayıby';
+            let roleText = 'Təyin olunmayıb';
             if (config.autoRoleId) {
                 const role = guild.roles.cache.get(config.autoRoleId);
                 roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
@@ -303,3 +291,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+                
