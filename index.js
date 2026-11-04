@@ -6,15 +6,13 @@ const mongoose = require('mongoose');
 // 1. MONGODB CONNECTION
 const MONGO_URI = process.env.MONGO_URI;
 
-if (!MONGO_URI) {
-    console.error('[CRITICAL]: MONGO_URI Environment Variable tapılmadı!');
+if (MONGO_URI) {
+    mongoose.connect(MONGO_URI).then(() => {
+        console.log('[DATABASE]: MongoDB bulud bazasına uğurla qoşuldu!');
+    }).catch(err => {
+        console.error('[DATABASE ERROR]: Qoşulma xətası:', err);
+    });
 }
-
-mongoose.connect(MONGO_URI).then(() => {
-    console.log('[DATABASE]: MongoDB bulud bazasına uğurla qoşuldu!');
-}).catch(err => {
-    console.error('[DATABASE ERROR]: Qoşulma xətası:', err);
-});
 
 // Database Schemas
 const settingSchema = new mongoose.Schema({
@@ -176,87 +174,101 @@ client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
     const { commandName, options, guild } = interaction;
 
-    if (commandName === 'moderasiya') {
-        const embed = new EmbedBuilder()
-            .setTitle('🛡️ ASPROL Pro Moderasiya Paneli')
-            .setDescription('Menudan əməliyyat seçin.')
-            .setColor('#5865F2');
-        await interaction.reply({ embeds: [embed] });
-    }
-    else if (commandName === 'clear') {
-        const amount = options.getInteger('say');
-        await interaction.channel.bulkDelete(amount, true);
-        await interaction.reply({ content: `Uğurla ${amount} mesaj silindi.`, ephemeral: true });
-    }
-    else if (commandName === 'ban') {
-        const user = options.getUser('istifadeci');
-        await guild.members.ban(user);
-        await interaction.reply(`🔨 ${user.tag} ban olundu.`);
-    }
-    else if (commandName === 'kick') {
-        const user = options.getUser('istifadeci');
-        await guild.members.kick(user);
-        await interaction.reply(`👢 ${user.tag} atıldı.`);
-    }
-    else if (commandName === 'avatar') {
-        const user = options.getUser('istifadeci') || interaction.user;
-        const embed = new EmbedBuilder().setTitle(`🖼️ ${user.username}`).setImage(user.displayAvatarURL({ size: 1024 }));
-        await interaction.reply({ embeds: [embed] });
-    }
-    else if (commandName === 'oto-rol') {
-        const role = options.getRole('rol');
-        await Setting.findOneAndUpdate(
-            { guildId: guild.id },
-            { autoRoleId: role.id },
-            { upsert: true, new: true }
-        );
-
-        const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə avtomatik olaraq **${role.name}** veriləcək (Bazaya yazıldı).`).setColor('#10B981');
-        await interaction.reply({ embeds: [embed] });
-    }
-    else if (commandName === 'log') {
-        const channel = options.getChannel('kanal');
-        await Setting.findOneAndUpdate(
-            { guildId: guild.id },
-            { logChannelId: channel.id },
-            { upsert: true, new: true }
-        );
-
-        const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot xatırlatmaları ${channel} kanalına göndərəcək (Bazaya yazıldı).`).setColor('#5865F2');
-        await interaction.reply({ embeds: [embed] });
-    }
-    else if (commandName === 'logyoxla') {
-        const config = await Setting.findOne({ guildId: guild.id });
-
-        if (!config || !config.logChannelId) {
-            return interaction.reply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb!', ephemeral: true });
+    try {
+        if (commandName === 'moderasiya') {
+            await interaction.reply({ 
+                embeds: [new EmbedBuilder().setTitle('🛡️ ASPROL Pro Moderasiya Paneli').setDescription('Menudan əməliyyat seçin.').setColor('#5865F2')],
+                ephemeral: true 
+            });
         }
-
-        const channel = guild.channels.cache.get(config.logChannelId);
-        if (!channel) {
-            return interaction.reply({ content: '❌ Log kanalı tapılmadı.', ephemeral: true });
+        else if (commandName === 'clear') {
+            await interaction.deferReply({ ephemeral: true });
+            const amount = options.getInteger('say');
+            await interaction.channel.bulkDelete(amount, true);
+            await interaction.editReply({ content: `Uğurla ${amount} mesaj silindi.` });
         }
-
-        let roleText = 'Təyin olunmayıb';
-        if (config.autoRoleId) {
-            const role = guild.roles.cache.get(config.autoRoleId);
-            roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
+        else if (commandName === 'ban') {
+            await interaction.deferReply({ ephemeral: true });
+            const user = options.getUser('istifadeci');
+            await guild.members.ban(user);
+            await interaction.editReply(`🔨 ${user.tag} ban olundu.`);
         }
+        else if (commandName === 'kick') {
+            await interaction.deferReply({ ephemeral: true });
+            const user = options.getUser('istifadeci');
+            await guild.members.kick(user);
+            await interaction.editReply(`👢 ${user.tag} atıldı.`);
+        }
+        else if (commandName === 'avatar') {
+            const user = options.getUser('istifadeci') || interaction.user;
+            const embed = new EmbedBuilder().setTitle(`🖼️ ${user.username}`).setImage(user.displayAvatarURL({ size: 1024 }));
+            await interaction.reply({ embeds: [embed] });
+        }
+        else if (commandName === 'oto-rol') {
+            await interaction.deferReply({ ephemeral: true });
+            const role = options.getRole('rol');
+            await Setting.findOneAndUpdate(
+                { guildId: guild.id },
+                { autoRoleId: role.id },
+                { upsert: true, new: true }
+            );
 
-        const embed = new EmbedBuilder()
-            .setTitle('🔍 ASPROL MongoDB Yoxlama Sorğusu')
-            .setDescription('Bulud bazasından oxunan cari məlumatlarım:')
-            .addFields(
-                { name: '⚙️ Bazadakı Oto-Rol', value: roleText, inline: true },
-                { name: '🛡️ Status', value: 'Buluddadırmı? Bəli, heç vaxt silinməz! 👍', inline: true }
-            )
-            .setColor('#10B981')
-            .setTimestamp();
+            const embed = new EmbedBuilder().setTitle('⚙️ Oto-Rol Təyin Olundu').setDescription(`Yeni gələnlərə avtomatik olaraq **${role.name}** veriləcək (Bazaya yazıldı).`).setColor('#10B981');
+            await interaction.editReply({ embeds: [embed] });
+        }
+        else if (commandName === 'log') {
+            await interaction.deferReply({ ephemeral: true });
+            const channel = options.getChannel('kanal');
+            await Setting.findOneAndUpdate(
+                { guildId: guild.id },
+                { logChannelId: channel.id },
+                { upsert: true, new: true }
+            );
 
-        await channel.send({ embeds: [embed] });
-        await interaction.reply({ content: `✅ Məlumatlar buluddan oxunub ${channel} kanalına göndərildi!`, ephemeral: true });
+            const embed = new EmbedBuilder().setTitle('📝 Log Kanalı Təyin Olundu').setDescription(`Bot xatırlatmaları ${channel} kanalına göndərəcək (Bazaya yazıldı).`).setColor('#5865F2');
+            await interaction.editReply({ embeds: [embed] });
+        }
+        else if (commandName === 'logyoxla') {
+            await interaction.deferReply({ ephemeral: true });
+            const config = await Setting.findOne({ guildId: guild.id });
+
+            if (!config || !config.logChannelId) {
+                return interaction.editReply({ content: '❌ Hələ heç bir log kanalı təyin olunmayıb!' });
+            }
+
+            const channel = guild.channels.cache.get(config.logChannelId);
+            if (!channel) {
+                return interaction.editReply({ content: '❌ Log kanalı tapılmadı.' });
+            }
+
+            let roleText = 'Təyin olunmayıb';
+            if (config.autoRoleId) {
+                const role = guild.roles.cache.get(config.autoRoleId);
+                roleText = role ? `<@&${config.autoRoleId}>` : 'ID qeyd olunub';
+            }
+
+            const embed = new EmbedBuilder()
+                .setTitle('🔍 ASPROL MongoDB Yoxlama Sorğusu')
+                .setDescription('Bulud bazasından oxunan cari məlumatlarım:')
+                .addFields(
+                    { name: '⚙️ Bazadakı Oto-Rol', value: roleText, inline: true },
+                    { name: '🛡️ Status', value: 'Buluddadırmı? Bəli, heç vaxt silinməz! 👍', inline: true }
+                )
+                .setColor('#10B981')
+                .setTimestamp();
+
+            await channel.send({ embeds: [embed] });
+            await interaction.editReply({ content: `✅ Məlumatlar buluddan oxunub ${channel} kanalına göndərildi!` });
+        }
+    } catch (err) {
+        console.error('Komanda xətası:', err);
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: '❌ Əməliyyat zamanı xəta baş verdi!' }).catch(() => {});
+        } else {
+            await interaction.reply({ content: '❌ Əməliyyat zamanı xəta baş verdi!', ephemeral: true }).catch(() => {});
+        }
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                       
+                 
