@@ -98,12 +98,8 @@ client.once('ready', async () => {
     console.log(`[BOT]: ${client.user.tag} adı ilə giriş edildi!`);
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
-        console.log('[BOT]: Köhnə komandalar təmizlənir...');
-        await rest.put(Routes.applicationCommands(client.user.id), { body: [] });
-
         console.log('[BOT]: Yeni komandalar qlobal olaraq qeydiyyatdan keçirilir...');
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        
         console.log('[BOT]: Slash komandaları uğurla yeniləndi!');
     } catch (error) { 
         console.error('Komanda yükləmə xətası:', error); 
@@ -366,4 +362,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                
+                                                     
