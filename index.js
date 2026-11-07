@@ -150,7 +150,36 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 });
-    client.on('interactionCreate', async (interaction) => {
+
+// OYUN KANALI - SAYMA VƏ REAKSİYA SİSTEMİ
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+    if (message.channel.name === 'oyun-sohbet') {
+        const content = message.content.trim();
+        
+        // Əgər mesaj "1" olarsa, təsdiq reaksiyası atır
+        if (content === '1') {
+            try {
+                await message.react('✅');
+            } catch (e) {}
+            return;
+        }
+
+        // Əgər rəqəm deyilsə (hərf və ya səhv simvolsa) xəbərdarlıq atıb 5 saniyəyə silir
+        if (isNaN(content)) {
+            try {
+                const warnMsg = await message.channel.send(`⚠️ <@${message.author.id}>, bu kanalda yalnız rəqəmlər yazıla bilər! Bu mesaj 5 saniyə sonra silinəcək.`);
+                setTimeout(async () => {
+                    try {
+                        await message.delete();
+                        await warnMsg.delete();
+                    } catch (e) {}
+                }, 5000);
+            } catch (err) {}
+        }
+    }
+});
+        client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
@@ -398,4 +427,4 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                
+                                                        
