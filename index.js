@@ -140,7 +140,6 @@ client.once('ready', async () => {
     }
 });
 
-// Otomatik Rol ve Loglama Sistemi
 client.on('guildMemberAdd', async (member) => {
     try {
         const settings = getSettings();
@@ -166,14 +165,12 @@ client.on('guildMemberAdd', async (member) => {
     } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
 
-// Sonsuz Özel Oca Sistemi (Join to Create)
-const tempChannels = new Map(); // Sahip olduğu geçici otaqlar
+const tempChannels = new Map();
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const guild = newState.guild;
     const member = newState.member;
 
-    // İstifadəçi xüsusi otaq yaratma kanalına girəndə
     if (newState.channel && newState.channel.name.includes('➕ | Otaq Yarat')) {
         try {
             const category = newState.channel.parent;
@@ -198,7 +195,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 
-    // Boş qalan xüsusi otaqların silinməsi
     if (oldState.channel && tempChannels.has(oldState.channel.id)) {
         if (oldState.channel.members.size === 0) {
             try {
@@ -210,8 +206,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 });
-      client.on('interactionCreate', async (interaction) => {
-    // 1. TICKET OLUŞTURMA BUTONU
+    client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -261,7 +256,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 
-    // 2. TICKET KAPATMA BUTONU
     if (interaction.isButton() && interaction.customId === 'close_ticket') {
         await interaction.reply('🔒 Bu destek kanalı 5 saniye sonra silinecek...');
         setTimeout(async () => {
@@ -273,13 +267,11 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }, 5000);
     }
 
-    // 3. ANKET OY BUTONLARI (Evet / Hayır)
     if (interaction.isButton() && (interaction.customId === 'anket_yes' || interaction.customId === 'anket_no')) {
         const choice = interaction.customId === 'anket_yes' ? 'Evet' : 'Hayır';
         await interaction.reply({ content: `✅ Oyunuz başarıyla kaydedildi: **${choice}**`, ephemeral: true });
     }
 
-    // 4. ÖZEL ODA KONTROL PANELİ BUTONLARI (15 Buton)
     if (interaction.isButton() && interaction.customId.startsWith('temp_')) {
         const channel = interaction.member.voice.channel;
         if (!channel) {
@@ -311,7 +303,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 
-    // 5. EMBED MODAL
     if (interaction.isButton() && interaction.customId === 'open_embed_modal') {
         const modal = new ModalBuilder()
             .setCustomId('embed_creator_modal')
@@ -580,20 +571,17 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         else if (commandName === 'özelodasetup') {
             await interaction.deferReply({ ephemeral: true });
             try {
-                // Kateqoriya yaradılması
                 const category = await guild.channels.create({
                     name: '🔊 ASTROL ÖZEL ODA SİSTEMİ',
                     type: ChannelType.GuildCategory
                 });
 
-                // Otaq yaratma səsi kanalı (Join to Create)
                 await guild.channels.create({
                     name: '➕ | Otaq Yarat',
                     type: ChannelType.GuildVoice,
                     parent: category.id
                 });
 
-                // İdarəetmə mətn kanalı
                 const textChannel = await guild.channels.create({
                     name: '🎵│oda-kontrol',
                     type: ChannelType.GuildText,
@@ -602,12 +590,11 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                         {
                             id: guild.id,
                             allow: [PermissionFlagsBits.ViewChannel],
-                            deny: [PermissionFlagsBits.SendMessages] // Yazı yazmaq qadağandır, yalnız düymələr işləyir
+                            deny: [PermissionFlagsBits.SendMessages]
                         }
                     ]
                 });
 
-                // Şəkildəki kimi 15 düyməli 3 sıra sistem (ActionRow)
                 const row1 = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('temp_isim').setLabel('Oda İsmi').setStyle(ButtonStyle.Secondary),
                     new ButtonBuilder().setCustomId('temp_limiti').setLabel('Oda Limiti').setStyle(ButtonStyle.Secondary),
@@ -618,4 +605,10 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 
                 const row2 = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('temp_guvenilir').setLabel('Güvenilir').setStyle(ButtonStyle.Success),
-                    new ButtonBuilder().setC
+                    new ButtonBuilder().setCustomId('temp_guvensiz').setLabel('Güvensiz').setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder().setCustomId('temp_davet').setLabel('Davet').setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder().setCustomId('temp_sestenat').setLabel('Sesten At').setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder().setCustomId('temp_bolge').setLabel('Bölge').setStyle(ButtonStyle.Secondary)
+                );
+
+   
