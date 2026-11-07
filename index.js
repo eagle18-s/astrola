@@ -206,7 +206,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 });
-    client.on('interactionCreate', async (interaction) => {
+client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
 
