@@ -71,7 +71,8 @@ const commands = [
     new SlashCommandBuilder().setName('yardim').setDescription('Botun tüm komutlarını listeler'),
     new SlashCommandBuilder().setName('qoşul').setDescription('Bulunduğun ses kanalına katılır'),
     new SlashCommandBuilder().setName('özelodasetup').setDescription('Özel oda yönetim kategorisini ve 15 butonlu kontrol panelini kurar').setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-    new SlashCommandBuilder().setName('güncelemenot').setDescription('Detaylı son güncelleme notlarını belirtilen kanala gönderir').addChannelOption(opt => opt.setName('kanal').setDescription('Notun gönderileceği kanal').addChannelTypes(ChannelType.GuildText).setRequired(true)).setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    new SlashCommandBuilder().setName('güncelemenot').setDescription('Detaylı son güncelleme notlarını belirtilen kanala gönderir').addChannelOption(opt => opt.setName('kanal').setDescription('Notun gönderileceği kanal').addChannelTypes(ChannelType.GuildText).setRequired(true)).setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder().setName('gamesetup').setDescription('Sadece adminler için özel oyun ve etkinlik sistemini kurar').setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
 client.once('ready', async () => {
@@ -87,11 +88,9 @@ client.once('ready', async () => {
     // Keep-Alive & DM Bildirim Sistemi (Hər 2 dəqiqədən bir)
     setInterval(async () => {
         try {
-            // 1. Sayta sorğu göndərir (Render yatmasın deyə)
             const res = await fetch('https://astrol.onrender.com');
             console.log(`[KEEP-ALIVE]: Sayt yoxlanıldı, Status: ${res.status}`);
 
-            // 2. Sənin ID-nə DM mesajı göndərir
             const targetUser = await client.users.fetch('1561721639518081105').catch(() => null);
             if (targetUser) {
                 await targetUser.send('🟢 **ASTROL Bot Aktivdir!** Sayt yoxlanıldı və serverin işləməyə davam edir.');
@@ -99,7 +98,7 @@ client.once('ready', async () => {
         } catch (err) { 
             console.error('[KEEP-ALIVE] Xəta:', err.message); 
         }
-    }, 2 * 60 * 1000); // 2 dəqiqə
+    }, 2 * 60 * 1000);
 });
 
 client.on('guildMemberAdd', async (member) => {
@@ -151,7 +150,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 });
-                                      client.on('interactionCreate', async (interaction) => {
+client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
@@ -319,7 +318,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
             await interaction.reply({ embeds: [new EmbedBuilder().setTitle(`👤 ${user.tag}`).setColor('#E67E22')] });
         }
         else if (commandName === 'yardim') {
-            const embed = new EmbedBuilder().setTitle('📖 Yardım Menüsü').setDescription('`/moderasyon`, `/destek`, `/özelodasetup`, `/güncelemenot`, `/qoşul`').setColor('#2ECC71');
+            const embed = new EmbedBuilder().setTitle('📖 Yardım Menüsü').setDescription('`/moderasyon`, `/destek`, `/özelodasetup`, `/gamesetup`, `/güncelemenot`, `/qoşul`').setColor('#2ECC71');
             await interaction.reply({ embeds: [embed], ephemeral: true });
         }
         else if (commandName === 'qoşul') {
@@ -364,6 +363,22 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                 await interaction.editReply({ content: '✅ Özel oda sistemi başarıyla kuruldu!' });
             } catch (err) { await interaction.editReply({ content: '❌ Kurulum hatası!' }); }
         }
+        else if (commandName === 'gamesetup') {
+            await interaction.deferReply({ ephemeral: true });
+            try {
+                const category = await guild.channels.create({ name: '🎮 ASTROL OYUN & ETKİNLİK', type: ChannelType.GuildCategory });
+                await guild.channels.create({ name: '🎮│oyun-sohbet', type: ChannelType.GuildText, parent: category.id });
+                await guild.channels.create({ name: '🔊 Etkinlik Odası', type: ChannelType.GuildVoice, parent: category.id });
+
+                const embed = new EmbedBuilder()
+                    .setTitle('🎮 ASTROL Oyun & Etkinlik Merkezi')
+                    .setDescription('Sunucumuzda düzenlenecek oyun etkinlikleri için bu kategori kullanılacaktır. İyi eğlenceler!')
+                    .setColor('#F1C40F')
+                    .setTimestamp();
+
+                await interaction.editReply({ content: '✅ Oyun ve etkinlik sistemi admin yetkisiyle başarıyla kuruldu!' });
+            } catch (err) { await interaction.editReply({ content: '❌ Oyun kurulumu sırasında hata oluştu!' }); }
+        }
         else if (commandName === 'güncelemenot') {
             const channel = options.getChannel('kanal');
             await interaction.deferReply({ ephemeral: true });
@@ -372,7 +387,8 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                 .setDescription('Sistemimiz güncellendi! Yeni eklenen özellikler aşağıdadır:')
                 .addFields(
                     { name: '🔊 Sonsuz Özel Oda Sistemi', value: '`➕ | Otaq Yarat` kanalına girerek kendi odanızı açabilirsiniz.', inline: false },
-                    { name: '🎛️ 15 Butonlu Panel', value: 'Ses odalarınızı tam kontrol edin.', inline: false }
+                    { name: '🎛️ 15 Butonlu Panel', value: 'Ses odalarınızı tam kontrol edin.', inline: false },
+                    { name: '🎮 Oyun ve Etkinlik Sistemi', value: '`/gamesetup` ile özel oyun odaları kurulabilir.', inline: false }
                 )
                 .setColor('#38BDF8').setTimestamp();
             await channel.send({ embeds: [embed] });
