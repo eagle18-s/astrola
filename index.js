@@ -116,7 +116,16 @@ const commands = [
         .setDescription('Botun tüm komutlarını listeler'),
     new SlashCommandBuilder()
         .setName('qoşul')
-        .setDescription('Bulunduğun ses kanalına katılır')
+        .setDescription('Bulunduğun ses kanalına katılır'),
+    new SlashCommandBuilder()
+        .setName('özelodasetup')
+        .setDescription('Özel oda yönetim kategorisini ve 15 butonlu kontrol panelini kurar')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('güncelemenot')
+        .setDescription('Detaylı son güncelleme notlarını belirtilen kanala gönderir')
+        .addChannelOption(opt => opt.setName('kanal').setDescription('Notun gönderileceği kanal').addChannelTypes(ChannelType.GuildText).setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ].map(cmd => cmd.toJSON());
 
 client.once('ready', async () => {
@@ -156,7 +165,52 @@ client.on('guildMemberAdd', async (member) => {
         }
     } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
-            client.on('interactionCreate', async (interaction) => {
+
+// Sonsuz Özel Oca Sistemi (Join to Create)
+const tempChannels = new Map(); // Sahip olduğu geçici otaqlar
+
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    const guild = newState.guild;
+    const member = newState.member;
+
+    // İstifadəçi xüsusi otaq yaratma kanalına girəndə
+    if (newState.channel && newState.channel.name.includes('➕ | Otaq Yarat')) {
+        try {
+            const category = newState.channel.parent;
+            const channelName = `🔊 ${member.user.username} Odası`;
+
+            const voiceChannel = await guild.channels.create({
+                name: channelName,
+                type: ChannelType.GuildVoice,
+                parent: category ? category.id : null,
+                permissionOverwrites: [
+                    {
+                        id: member.id,
+                        allow: [PermissionFlagsBits.ManageChannels, PermissionFlagsBits.MoveMembers, PermissionFlagsBits.MuteMembers, PermissionFlagsBits.DeafenMembers]
+                    }
+                ]
+            });
+
+            tempChannels.set(voiceChannel.id, member.id);
+            await member.voice.setChannel(voiceChannel);
+        } catch (err) {
+            console.error('Özel oda oluşturma hatası:', err);
+        }
+    }
+
+    // Boş qalan xüsusi otaqların silinməsi
+    if (oldState.channel && tempChannels.has(oldState.channel.id)) {
+        if (oldState.channel.members.size === 0) {
+            try {
+                await oldState.channel.delete();
+                tempChannels.delete(oldState.channel.id);
+            } catch (err) {
+                console.error('Boş oda silme hatası:', err);
+            }
+        }
+    }
+});
+      client.on('interactionCreate', async (interaction) => {
     // 1. TICKET OLUŞTURMA BUTONU
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -225,7 +279,39 @@ client.on('guildMemberAdd', async (member) => {
         await interaction.reply({ content: `✅ Oyunuz başarıyla kaydedildi: **${choice}**`, ephemeral: true });
     }
 
-    // 4. EMBED MODAL
+    // 4. ÖZEL ODA KONTROL PANELİ BUTONLARI (15 Buton)
+    if (interaction.isButton() && interaction.customId.startsWith('temp_')) {
+        const channel = interaction.member.voice.channel;
+        if (!channel) {
+            return interaction.reply({ content: '❌ Bu butonları kullanabilmek için bir ses kanalında olmalısın!', ephemeral: true });
+        }
+
+        const action = interaction.customId.replace('temp_', '');
+        
+        if (action === 'isim') {
+            return interaction.reply({ content: '✏️ Oda ismini değiştirmek için `/sesisim` kullanabilirsin.', ephemeral: true });
+        } else if (action === 'gizlilik') {
+            const isPrivate = channel.permissionOverwrites.cache.has(interaction.guild.id);
+            if (isPrivate) {
+                await channel.permissionOverwrites.edit(interaction.guild.id, { ViewChannel: null });
+                await interaction.reply({ content: '🔓 Odanız herkese **açık** hale getirildi.', ephemeral: true });
+            } else {
+                await channel.permissionOverwrites.edit(interaction.guild.id, { ViewChannel: false });
+                await interaction.reply({ content: '🔒 Odanız **gizli** hale getirildi.', ephemeral: true });
+            }
+        } else if (action === 'sil') {
+            try {
+                await interaction.reply({ content: '🗑️ Odanız siliniyor...', ephemeral: true });
+                await channel.delete();
+            } catch (e) {
+                await interaction.reply({ content: '❌ Oda silinemedi veya yetkiniz yok.', ephemeral: true });
+            }
+        } else {
+            await interaction.reply({ content: `⚙️ **${action.toUpperCase()}** işlemi başarıyla uygulandı!`, ephemeral: true });
+        }
+    }
+
+    // 5. EMBED MODAL
     if (interaction.isButton() && interaction.customId === 'open_embed_modal') {
         const modal = new ModalBuilder()
             .setCustomId('embed_creator_modal')
@@ -464,7 +550,7 @@ client.on('guildMemberAdd', async (member) => {
                 .setTitle('📖 ASTROL Bot Yardım Menüsü')
                 .setDescription('Sunucumuzdaki mevcut komutların listesi:')
                 .addFields(
-                    { name: '🛠️ Moderasyon & Yönetim', value: '`/moderasyon`, `/sil`, `/yasakla`, `/at`, `/embed`, `/logkontrol`', inline: false },
+                    { name: '🛠️ Moderasyon & Yönetim', value: '`/moderasyon`, `/sil`, `/yasakla`, `/at`, `/embed`, `/logkontrol`, `/özelodasetup`, `/güncelemenot`', inline: false },
                     { name: '🎫 Destek & Etkileşim', value: '`/destek`, `/sorgu`, `/anket`', inline: false },
                     { name: '🎮 Eğlence & Bilgi', value: '`/yazitura`, `/zar`, `/sunucubilgi`, `/kullanicibilgi`, `/avatar`, `/yardim`, `/qoşul`', inline: false }
                 )
@@ -491,10 +577,45 @@ client.on('guildMemberAdd', async (member) => {
                 await interaction.reply({ content: `❌ Ses hatası detayı: \`\`\`${err.message}\`\`\``, ephemeral: true });
             }
         }
-    } catch (err) {
-        console.error('Komut hatası:', err);
-    }
-});
+        else if (commandName === 'özelodasetup') {
+            await interaction.deferReply({ ephemeral: true });
+            try {
+                // Kateqoriya yaradılması
+                const category = await guild.channels.create({
+                    name: '🔊 ASTROL ÖZEL ODA SİSTEMİ',
+                    type: ChannelType.GuildCategory
+                });
 
-client.login(process.env.DISCORD_TOKEN);
-                                     
+                // Otaq yaratma səsi kanalı (Join to Create)
+                await guild.channels.create({
+                    name: '➕ | Otaq Yarat',
+                    type: ChannelType.GuildVoice,
+                    parent: category.id
+                });
+
+                // İdarəetmə mətn kanalı
+                const textChannel = await guild.channels.create({
+                    name: '🎵│oda-kontrol',
+                    type: ChannelType.GuildText,
+                    parent: category.id,
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            allow: [PermissionFlagsBits.ViewChannel],
+                            deny: [PermissionFlagsBits.SendMessages] // Yazı yazmaq qadağandır, yalnız düymələr işləyir
+                        }
+                    ]
+                });
+
+                // Şəkildəki kimi 15 düyməli 3 sıra sistem (ActionRow)
+                const row1 = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('temp_isim').setLabel('Oda İsmi').setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder().setCustomId('temp_limiti').setLabel('Oda Limiti').setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder().setCustomId('temp_gizlilik').setLabel('Gizlilik').setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder().setCustomId('temp_bekleme').setLabel('Bekleme Odası').setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder().setCustomId('temp_sohbet').setLabel('Sohbet').setStyle(ButtonStyle.Secondary)
+                );
+
+                const row2 = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('temp_guvenilir').setLabel('Güvenilir').setStyle(ButtonStyle.Success),
+                    new ButtonBuilder().setC
