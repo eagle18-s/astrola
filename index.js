@@ -83,6 +83,23 @@ client.once('ready', async () => {
     } catch (error) { 
         console.error('Komut yükleme hatası:', error); 
     }
+
+    // Keep-Alive & DM Bildirim Sistemi (Hər 2 dəqiqədən bir)
+    setInterval(async () => {
+        try {
+            // 1. Sayta sorğu göndərir (Render yatmasın deyə)
+            const res = await fetch('https://astrol.onrender.com');
+            console.log(`[KEEP-ALIVE]: Sayt yoxlanıldı, Status: ${res.status}`);
+
+            // 2. Sənin ID-nə DM mesajı göndərir
+            const targetUser = await client.users.fetch('1561721639518081105').catch(() => null);
+            if (targetUser) {
+                await targetUser.send('🟢 **ASTROL Bot Aktivdir!** Sayt yoxlanıldı və serverin işləməyə davam edir.');
+            }
+        } catch (err) { 
+            console.error('[KEEP-ALIVE] Xəta:', err.message); 
+        }
+    }, 2 * 60 * 1000); // 2 dəqiqə
 });
 
 client.on('guildMemberAdd', async (member) => {
@@ -134,7 +151,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 });
-client.on('interactionCreate', async (interaction) => {
+                                      client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
@@ -365,4 +382,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-            
+        
