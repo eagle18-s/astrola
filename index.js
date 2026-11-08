@@ -119,7 +119,7 @@ client.on('guildMemberAdd', async (member) => {
     } catch (err) { console.error('Oto-rol veya log hatası:', err); }
 });
 
-const tempChannels = new Map(); // Hangi kanalın kime ait olduğunu tutar
+const tempChannels = new Map();
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const guild = newState.guild;
@@ -169,7 +169,7 @@ client.on('messageCreate', async (message) => {
         }
     }
 });
-client.on('interactionCreate', async (interaction) => {
+                                     client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_ticket') {
         const ticketChannelName = `destek-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
         const existingChannel = interaction.guild.channels.cache.find(c => c.name === ticketChannelName);
@@ -203,13 +203,12 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.reply({ content: `✅ Oyunuz başarıyla kaydedildi: **${choice}**`, ephemeral: true });
     }
 
-    // --- REAL İŞLƏK SƏS KANALI BUTONLARI VƏ MODALLARI ---
+    // Yalnız səs paneli butonları üçün səs kanalı yoxlaması
     if (interaction.isButton() && interaction.customId.startsWith('temp_')) {
         const channel = interaction.member.voice.channel;
         if (!channel) return interaction.reply({ content: '❌ Bu butonları kullanabilmek için kendi ses kanalında olmalısın!', ephemeral: true });
         
         const ownerId = tempChannels.get(channel.id);
-        // Eğer odayı oluşturan kayıtlı değilse ilk giren sahip sayılır
         if (!ownerId) tempChannels.set(channel.id, interaction.user.id);
 
         const action = interaction.customId.replace('temp_', '');
@@ -257,17 +256,17 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
-    // Modal Gönderimleri (İsim ve Limit Dəyişmə)
     if (interaction.isModalSubmit()) {
-        const channel = interaction.member.voice.channel;
-        if (!channel) return interaction.reply({ content: '❌ Bir ses kanalında olmalısın!', ephemeral: true });
-
         if (interaction.customId === 'modal_temp_isim') {
+            const channel = interaction.member.voice.channel;
+            if (!channel) return interaction.reply({ content: '❌ Bir ses kanalında olmalısın!', ephemeral: true });
             const newName = interaction.fields.getTextInputValue('new_name');
             await channel.setName(newName);
             return await interaction.reply({ content: `✅ Oda ismi **${newName}** olarak güncellendi!`, ephemeral: true });
         }
         else if (interaction.customId === 'modal_temp_limit') {
+            const channel = interaction.member.voice.channel;
+            if (!channel) return interaction.reply({ content: '❌ Bir ses kanalında olmalısın!', ephemeral: true });
             const limitStr = interaction.fields.getTextInputValue('new_limit');
             const limit = parseInt(limitStr);
             if (isNaN(limit) || limit < 0 || limit > 99) {
@@ -275,6 +274,20 @@ client.on('interactionCreate', async (interaction) => {
             }
             await channel.setUserLimit(limit);
             return await interaction.reply({ content: `✅ Oda limiti **${limit === 0 ? 'Sınırsız' : limit} kişi** olarak ayarlandı!`, ephemeral: true });
+        }
+        else if (interaction.customId === 'embed_creator_modal') {
+            const title = interaction.fields.getTextInputValue('embed_title');
+            const desc = interaction.fields.getTextInputValue('embed_desc');
+            const serverId = interaction.fields.getTextInputValue('server_id');
+            const channelId = interaction.fields.getTextInputValue('channel_id');
+            await interaction.deferReply({ ephemeral: true });
+            try {
+                const guild = await client.guilds.fetch(serverId);
+                const channel = await guild.channels.fetch(channelId);
+                const embed = new EmbedBuilder().setTitle(title).setDescription(desc).setColor('#00F2FE').setTimestamp();
+                await channel.send({ embeds: [embed] });
+                await interaction.editReply({ content: `✅ Embed başarıyla <#${channelId}> kanalına gönderildi!` });
+            } catch (err) { await interaction.editReply({ content: '❌ Bir hata oluştu! ID-lerin doğru olduğundan emin olun.' }); }
         }
     }
 
@@ -287,21 +300,6 @@ client.on('interactionCreate', async (interaction) => {
             new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('channel_id').setLabel('Kanal ID').setStyle(TextInputStyle.Short).setRequired(true))
         );
         await interaction.showModal(modal);
-    }
-
-    if (interaction.isModalSubmit() && interaction.customId === 'embed_creator_modal') {
-        const title = interaction.fields.getTextInputValue('embed_title');
-        const desc = interaction.fields.getTextInputValue('embed_desc');
-        const serverId = interaction.fields.getTextInputValue('server_id');
-        const channelId = interaction.fields.getTextInputValue('channel_id');
-        await interaction.deferReply({ ephemeral: true });
-        try {
-            const guild = await client.guilds.fetch(serverId);
-            const channel = await guild.channels.fetch(channelId);
-            const embed = new EmbedBuilder().setTitle(title).setDescription(desc).setColor('#00F2FE').setTimestamp();
-            await channel.send({ embeds: [embed] });
-            await interaction.editReply({ content: `✅ Embed başarıyla <#${channelId}> kanalına gönderildi!` });
-        } catch (err) { await interaction.editReply({ content: '❌ Bir hata oluştu! ID-lerin doğru olduğundan emin olun.' }); }
     }
 
     if (!interaction.isChatInputCommand()) return;
@@ -441,10 +439,10 @@ client.on('interactionCreate', async (interaction) => {
             await interaction.deferReply({ ephemeral: true });
             const embed = new EmbedBuilder()
                 .setTitle('🚀 ASTROL Bot & Sunucu - Güncelleme ve Hata Düzeltme Notu')
-                .setDescription('Sistemimizdeki tüm hatalar giderildi ve səs idarəetmə paneli tamamen aktif hale getirildi!')
+                .setDescription('Sistemimizdeki tüm çakışmalar giderildi ve paneller sorunsuz hale getirildi!')
                 .addFields(
-                    { name: '🎛️ İnteraktif 15 Butonlu Ses Paneli', value: 'Artık **Oda İsmi** ve **Oda Limiti** butonlarına bastığınızda açılan menüden kanalınızı anında güncelleyebilirsiniz. Tüm butonlar gerçek zamanlı çalışmaktadır.', inline: false },
-                    { name: '🛠️ Hata Düzeltmeleri & İyileştirmeler', value: 'Eski hatalar ve oyun/sayma kanalı uyumsuzlukları tamamen giderildi. Sistem artık kusursuz çalışıyor.', inline: false }
+                    { name: '✨ Embed Paneli Düzeltmesi', value: 'Embed hazırlama butonuna basıldığında gelen gereksiz səs kanalı hatası giderildi. Artık şifreyi girip paneli sorunsuz açabilirsiniz.', inline: false },
+                    { name: '🎛️ İnteraktif 15 Butonlu Ses Paneli', value: '**Oda İsmi** ve **Oda Limiti** butonları modal (pencere) desteğiyle tam performans çalışmaktadır.', inline: false }
                 )
                 .setColor('#38BDF8').setTimestamp();
             await channel.send({ embeds: [embed] });
@@ -454,4 +452,4 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-                
+        
